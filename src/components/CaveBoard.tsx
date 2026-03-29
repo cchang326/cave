@@ -2,6 +2,7 @@ import React from 'react';
 import { CaveSpace, RoomTile } from '../types/game';
 import { Pickaxe } from 'lucide-react';
 import { isValidRoomPlacement } from '../utils/walls';
+import { WallRequirementIcon } from './WallRequirementIcon';
 
 interface Props {
   cave: CaveSpace[];
@@ -102,6 +103,7 @@ export const CaveBoard: React.FC<Props> = ({
                 
                 {space.state === 'FURNISHED' && space.tile && (
                   <>
+                    <WallRequirementIcon req={space.tile.wallRequirement} className="absolute top-1.5 left-1.5" />
                     <span className="text-sm font-bold text-stone-800 leading-tight mt-1">{space.tile.name}</span>
                     <span className="text-[10px] text-stone-700 leading-tight mt-2 px-1">{space.tile.effectDescription}</span>
                     <span className="absolute bottom-1 right-1 bg-stone-800 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">{space.tile.vp} VP</span>

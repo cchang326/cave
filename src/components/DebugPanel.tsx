@@ -11,12 +11,27 @@ interface Props {
   debugState: DebugState;
   setDebugState: React.Dispatch<React.SetStateAction<DebugState>>;
   gameState: GameState;
+  setGameState: React.Dispatch<React.SetStateAction<GameState>>;
 }
 
-export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameState }) => {
+export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameState, setGameState }) => {
   const [isOpen, setIsOpen] = useState(false);
   
   const currentScore = calculateScore(gameState);
+
+  const handleInfiniteResources = () => {
+    setGameState(prev => ({
+      ...prev,
+      goods: {
+        wood: 99,
+        stone: 99,
+        emmer: 99,
+        flax: 99,
+        food: 99,
+        gold: 99
+      }
+    }));
+  };
 
   if (!isOpen) {
     return (
@@ -74,6 +89,15 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
           <p className="text-xs text-stone-500 leading-relaxed">
             When enabled, you can perform actions, furnish rooms, and use room actions even if you don't have the required resources.
           </p>
+        </div>
+
+        <div className="pt-4 border-t border-stone-700">
+          <button
+            onClick={handleInfiniteResources}
+            className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
+          >
+            Infinite Resource (99)
+          </button>
         </div>
       </div>
     </div>

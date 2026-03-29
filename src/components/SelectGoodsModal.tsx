@@ -13,7 +13,7 @@ interface Props {
 export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDifferent, onConfirm, onCancel }) => {
   const [selected, setSelected] = useState<Partial<GoodsState>>({});
 
-  const totalSelected = Object.values(selected).reduce((sum, val) => sum + (val || 0), 0);
+  const totalSelected = Object.values(selected).reduce((sum, val) => (sum as number) + ((val as number) || 0), 0) as number;
   const isValid = totalSelected === amount;
 
   const handleToggle = (good: keyof GoodsState) => {

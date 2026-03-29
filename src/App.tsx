@@ -124,6 +124,8 @@ function initializeGame(): GameState {
       furnishingsLeft: 0,
       roomActionsLeft: 0,
       wallsLeft: 0,
+      wallsToRemoveLeft: 0,
+      dynamicCostAmount: 0,
       checklist: []
     }
   };
@@ -218,9 +220,9 @@ export default function App() {
       if (item.actionType === 'GAIN') {
         if (item.data.replenishUpTo) {
           const diff: Partial<typeof next.goods> = {};
-          for (const key in item.data.replenishUpTo) {
-            const k = key as keyof typeof next.goods;
-            const target = item.data.replenishUpTo[k] as number;
+          for (const key of Object.keys(item.data.replenishUpTo)) {
+            const k = key as keyof GoodsState;
+            const target = (item.data.replenishUpTo as Record<string, number>)[key];
             const current = next.goods[k] || 0;
             if (current < target) {
               diff[k] = target - current;
@@ -355,7 +357,7 @@ export default function App() {
         const cost = item.actionType === 'PAY' ? item.data?.goods : item.data?.payBefore;
         const affordable = canAfford(gameState.goods, cost, debugState.ignoreResourceValidation);
         
-        if (affordable && (!item.optional || todos.length === 1)) {
+        if (affordable && !item.optional) {
           autoExecutedRef.current.add(item.id);
           // Use a slight timeout to allow UI to render the checklist before auto-executing
           // This prevents the UI from feeling too jarring
@@ -383,7 +385,7 @@ export default function App() {
       let newFuture = [...board.futureActions];
       let nextUsed: string[] = newUsed;
 
-      let nextMode: UIState['mode'] = 'IDLE';
+      let nextMode: GameState['uiState']['mode'] = 'IDLE';
 
       if (newTurn > board.maxTurns) {
         if (newFuture.length === 0) {
@@ -413,6 +415,8 @@ export default function App() {
         furnishingsLeft: 0,
         roomActionsLeft: 0,
         wallsLeft: 0,
+        wallsToRemoveLeft: 0,
+        dynamicCostAmount: 0,
         checklist: [],
         activeActionTile: undefined
       };
@@ -479,8 +483,11 @@ export default function App() {
         const room = prev.centralDisplay.find(r => r.id === roomId);
         if (!room) return prev;
 
+        const itemIndex = prev.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
+        const isFree = itemIndex !== -1 && prev.uiState.checklist[itemIndex].data?.freeFurnish;
+
         // Check if user has enough resources
-        const hasEnough = debugState.ignoreResourceValidation || Object.entries(room.cost).every(([key, value]) => {
+        const hasEnough = debugState.ignoreResourceValidation || isFree || Object.entries(room.cost).every(([key, value]) => {
           return (prev.goods[key as keyof typeof prev.goods] || 0) >= (value as number);
         });
 
@@ -559,7 +566,11 @@ export default function App() {
         }
 
         // Deduct cost
-        nextState.goods = subtractGoods(nextState.goods, roomToPlace.cost);
+        const itemIndex = prev.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
+        const isFree = itemIndex !== -1 && prev.uiState.checklist[itemIndex].data?.freeFurnish;
+        if (!isFree) {
+          nextState.goods = subtractGoods(nextState.goods, roomToPlace.cost);
+        }
 
         // Remove from display
         nextState.centralDisplay.splice(roomIndex, 1);
@@ -590,13 +601,13 @@ export default function App() {
 
         nextState.uiState.furnishingsLeft -= 1;
         
-        const itemIndex = nextState.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
-        if (itemIndex !== -1) {
-          const doingItem = { ...nextState.uiState.checklist[itemIndex] };
+        const furnishItemIndex = nextState.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
+        if (furnishItemIndex !== -1) {
+          const doingItem = { ...nextState.uiState.checklist[furnishItemIndex] };
           if (doingItem.data) {
             doingItem.data = { ...doingItem.data, count: nextState.uiState.furnishingsLeft };
           }
-          nextState.uiState.checklist[itemIndex] = doingItem;
+          nextState.uiState.checklist[furnishItemIndex] = doingItem;
         }
 
         if (nextState.uiState.furnishingsLeft > 0) {
@@ -725,6 +736,15 @@ export default function App() {
           nextState.goods = addGoods(nextState.goods, item.data.payBefore);
         }
         checklist[itemIndex] = { ...item, status: 'TODO' };
+
+        // Restore exclusive group items
+        if (item.exclusiveGroup) {
+          checklist.forEach((checkItem, idx) => {
+            if (checkItem.id !== item.id && checkItem.exclusiveGroup === item.exclusiveGroup && checkItem.status === 'SKIPPED') {
+              checklist[idx] = { ...checkItem, status: 'TODO' };
+            }
+          });
+        }
       }
       
       nextState.uiState.checklist = checklist;
@@ -733,6 +753,8 @@ export default function App() {
       nextState.uiState.furnishingsLeft = 0;
       nextState.uiState.roomActionsLeft = 0;
       nextState.uiState.wallsLeft = 0;
+      nextState.uiState.wallsToRemoveLeft = 0;
+      nextState.uiState.dynamicCostAmount = 0;
       nextState.uiState.selectedRoomId = undefined;
       
       return nextState;
@@ -770,9 +792,9 @@ export default function App() {
                   if (item.data?.gainAfter) {
                     if (item.data.replenishUpToGainAfter) {
                       const diff: Partial<typeof nextState.goods> = {};
-                      for (const key in item.data.gainAfter) {
-                        const k = key as keyof typeof nextState.goods;
-                        const target = item.data.gainAfter[k] as number;
+                      for (const key of Object.keys(item.data.gainAfter)) {
+                        const k = key as keyof GoodsState;
+                        const target = (item.data.gainAfter as Record<string, number>)[key];
                         const current = nextState.goods[k] || 0;
                         if (current < target) {
                           diff[k] = target - current;
@@ -913,7 +935,7 @@ export default function App() {
           </section>
         </main>
       </div>
-      <DebugPanel debugState={debugState} setDebugState={setDebugState} gameState={gameState} />
+      <DebugPanel debugState={debugState} setDebugState={setDebugState} gameState={gameState} setGameState={setGameState} />
     </div>
   );
 }

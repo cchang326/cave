@@ -1,5 +1,6 @@
 import React from 'react';
 import { RoomTile } from '../types/game';
+import { WallRequirementIcon } from './WallRequirementIcon';
 
 interface Props {
   tiles: RoomTile[];
@@ -32,6 +33,7 @@ export const CentralDisplay: React.FC<Props> = ({ tiles, isSelectable = false, o
               ${isSelectable ? 'cursor-pointer hover:scale-105 ring-4 ring-orange-400/50 animate-pulse' : ''}
             `}
           >
+            <WallRequirementIcon req={tile.wallRequirement} className="absolute top-1.5 left-1.5" />
             <span className="text-sm font-bold text-stone-800 leading-tight mt-1">{tile.name}</span>
             {Object.keys(tile.cost).length > 0 && (
               <span className="text-[10px] font-bold text-stone-600 mt-1">Cost: {renderCost(tile.cost)}</span>
