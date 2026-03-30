@@ -77,6 +77,7 @@ export interface UIState {
   selectedRoomId?: string;
   checklist: ChecklistItem[];
   activeActionTile?: string;
+  activatedRoomsThisTurn: string[];
   hasInteractedWithChecklist?: boolean;
   undoSnapshot?: string;
 }

@@ -13,13 +13,19 @@ import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
 import { isValidRoomPlacement } from './utils/walls';
 
-function canAfford(goods: GoodsState, cost?: Partial<GoodsState>, ignoreValidation?: boolean): boolean {
-  if (ignoreValidation) return true;
-  if (!cost) return true;
-  for (const key in cost) {
-    const k = key as keyof GoodsState;
-    if (goods[k] < (cost[k] || 0)) return false;
+function canAfford(goods: GoodsState, cost?: Partial<GoodsState>, condition?: any): boolean {
+  if (cost) {
+    for (const key in cost) {
+      const k = key as keyof GoodsState;
+      if (goods[k] < (cost[k] || 0)) return false;
+    }
   }
+
+  if (condition) {
+    if (condition.maxStone !== undefined && goods.stone > condition.maxStone) return false;
+    if (condition.minGold !== undefined && goods.gold < condition.minGold) return false;
+  }
+
   return true;
 }
 
@@ -46,7 +52,8 @@ function addGoods(current: GameState['goods'], gains: Partial<GameState['goods']
   const next = { ...current };
   for (const key in gains) {
     const k = key as keyof GameState['goods'];
-    next[k] = Math.min(9, next[k] + (gains[k] || 0));
+    const limit = k === 'gold' ? 19 : 9;
+    next[k] = Math.min(limit, next[k] + (gains[k] || 0));
   }
   return next;
 }
@@ -126,14 +133,15 @@ function initializeGame(): GameState {
       wallsLeft: 0,
       wallsToRemoveLeft: 0,
       dynamicCostAmount: 0,
-      checklist: []
+      checklist: [],
+      activatedRoomsThisTurn: []
     }
   };
 }
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(initializeGame());
-  const [debugState, setDebugState] = useState<DebugState>({ ignoreResourceValidation: false });
+  const [debugState, setDebugState] = useState<DebugState>({});
   const autoExecutedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -146,7 +154,7 @@ export default function App() {
     if (gameState.uiState.mode !== 'IDLE') return;
 
     setGameState(prev => {
-      const checklist = generateChecklistForAction(actionId, prev.actionBoard);
+      const checklist = generateChecklistForAction(actionId, prev.actionBoard, prev.cave);
       return {
         ...prev,
         uiState: {
@@ -189,7 +197,7 @@ export default function App() {
           return next;
         }
       } else if (item.actionType === 'ROOM_ACTION') {
-        const hasRoomActions = next.cave.some(s => s.state === 'FURNISHED' && s.tile?.trigger === 'action');
+        const hasRoomActions = next.cave.some(s => (s.state === 'FURNISHED' || s.state === 'ENTRANCE') && s.tile?.trigger === 'action');
         if (!hasRoomActions) {
           alert("No rooms with actions available!");
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
@@ -207,14 +215,19 @@ export default function App() {
 
       // Handle payBefore for any action type
       if (item.data?.payBefore) {
-        const hasEnough = debugState.ignoreResourceValidation || Object.entries(item.data.payBefore).every(([key, value]) => {
-          return (next.goods[key as keyof typeof next.goods] || 0) >= (value as number);
-        });
-        if (!hasEnough) {
+        if (!canAfford(next.goods, item.data.payBefore)) {
           alert("Not enough resources to pay for this action!");
           return prev;
         }
         next.goods = subtractGoods(next.goods, item.data.payBefore);
+      }
+
+      // Check condition before executing
+      if (item.data?.condition) {
+        if (!canAfford(next.goods, undefined, item.data.condition)) {
+          alert("Condition not met for this action!");
+          return prev;
+        }
       }
 
       if (item.actionType === 'GAIN') {
@@ -234,7 +247,7 @@ export default function App() {
         }
         updatedItem.status = 'DONE';
       } else if (item.actionType === 'PAY') {
-        const hasEnough = debugState.ignoreResourceValidation || Object.entries(item.data.goods).every(([key, value]) => {
+        const hasEnough = Object.entries(item.data.goods).every(([key, value]) => {
           return (next.goods[key as keyof typeof next.goods] || 0) >= (value as number);
         });
         if (!hasEnough) {
@@ -339,7 +352,7 @@ export default function App() {
     const choiceItem = todos.find(i => i.actionType === 'CHOICE');
     if (choiceItem && !choiceItem.optional) {
       const viableOptions = choiceItem.data.options.map((opt: any, idx: number) => ({ opt, idx }))
-        .filter(({ opt }: any) => canAfford(gameState.goods, opt.cost, debugState.ignoreResourceValidation));
+        .filter(({ opt }: any) => canAfford(gameState.goods, opt.cost));
       
       if (viableOptions.length === 1) {
         handleChooseChecklist(choiceItem.id, viableOptions[0].idx, false);
@@ -355,7 +368,7 @@ export default function App() {
         if (autoExecutedRef.current.has(item.id)) return;
 
         const cost = item.actionType === 'PAY' ? item.data?.goods : item.data?.payBefore;
-        const affordable = canAfford(gameState.goods, cost, debugState.ignoreResourceValidation);
+        const affordable = canAfford(gameState.goods, cost);
         
         if (affordable && !item.optional) {
           autoExecutedRef.current.add(item.id);
@@ -368,7 +381,7 @@ export default function App() {
         }
       }
     }
-  }, [gameState.uiState.checklist, gameState.uiState.mode, gameState.goods, debugState.ignoreResourceValidation]);
+  }, [gameState.uiState.checklist, gameState.uiState.mode, gameState.goods]);
 
   const handleFinishTurn = () => {
     setGameState(prev => {
@@ -418,7 +431,8 @@ export default function App() {
         wallsToRemoveLeft: 0,
         dynamicCostAmount: 0,
         checklist: [],
-        activeActionTile: undefined
+        activeActionTile: undefined,
+        activatedRoomsThisTurn: []
       };
 
       return nextState;
@@ -487,7 +501,7 @@ export default function App() {
         const isFree = itemIndex !== -1 && prev.uiState.checklist[itemIndex].data?.freeFurnish;
 
         // Check if user has enough resources
-        const hasEnough = debugState.ignoreResourceValidation || isFree || Object.entries(room.cost).every(([key, value]) => {
+        const hasEnough = isFree || Object.entries(room.cost).every(([key, value]) => {
           return (prev.goods[key as keyof typeof prev.goods] || 0) >= (value as number);
         });
 
@@ -622,12 +636,20 @@ export default function App() {
         const spaceIndex = prev.cave.findIndex(s => s.id === spaceId);
         const space = prev.cave[spaceIndex];
 
-        if (space.state !== 'FURNISHED' || !space.tile || space.tile.trigger !== 'action') {
+        const isFurnishedAction = space.state === 'FURNISHED' && space.tile?.trigger === 'action';
+        const isEntranceAction = space.state === 'ENTRANCE' && space.tile?.trigger === 'action';
+
+        if (!isFurnishedAction && !isEntranceAction) {
+          return prev;
+        }
+
+        if (nextState.uiState.activatedRoomsThisTurn.includes(spaceId)) {
+          alert("This room has already been activated this turn!");
           return prev;
         }
 
         // Apply room action effect
-        const newItems = getRoomActionChecklistItems(space.tile.id);
+        const newItems = getRoomActionChecklistItems(space.tile.id, prev.cave);
         
         if (newItems.length > 0) {
           // Insert new items right after the current ROOM_ACTION item
@@ -643,6 +665,7 @@ export default function App() {
         }
 
         nextState.uiState.roomActionsLeft -= 1;
+        nextState.uiState.activatedRoomsThisTurn = [...nextState.uiState.activatedRoomsThisTurn, spaceId];
         
         const itemIndex = nextState.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'ROOM_ACTION');
         if (itemIndex !== -1) {
@@ -883,6 +906,7 @@ export default function App() {
             <div className="flex-1">
               <ActionBoard 
                 board={gameState.actionBoard} 
+                activeActionTile={gameState.uiState.activeActionTile}
                 onTakeAction={handleTakeAction} 
               />
             </div>
@@ -891,7 +915,6 @@ export default function App() {
                 <ChecklistUI 
                   checklist={gameState.uiState.checklist}
                   goods={gameState.goods}
-                  ignoreResourceValidation={debugState.ignoreResourceValidation}
                   onExecute={handleExecuteChecklist}
                   onSkip={handleSkipChecklist}
                   onChoose={handleChooseChecklist}
@@ -920,6 +943,7 @@ export default function App() {
                 isRemovingWall={gameState.uiState.mode === 'REMOVE_WALL'}
                 accessibleSpaces={accessibleSpaces}
                 selectedRoomTile={selectedRoomTile}
+                activatedRoomsThisTurn={gameState.uiState.activatedRoomsThisTurn}
                 onSpaceClick={handleSpaceClick}
                 onWallClick={handleWallClick}
               />
@@ -929,6 +953,7 @@ export default function App() {
               <CentralDisplay 
                 tiles={gameState.centralDisplay} 
                 isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM'}
+                selectedRoomId={gameState.uiState.selectedRoomId}
                 onRoomClick={handleRoomClick}
               />
             </div>

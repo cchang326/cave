@@ -14,6 +14,7 @@ interface Props {
   isRemovingWall?: boolean;
   accessibleSpaces: string[];
   selectedRoomTile?: RoomTile;
+  activatedRoomsThisTurn?: string[];
   onSpaceClick: (id: string) => void;
   onWallClick?: (wallId: string) => void;
 }
@@ -28,6 +29,7 @@ export const CaveBoard: React.FC<Props> = ({
   isRemovingWall = false,
   accessibleSpaces, 
   selectedRoomTile,
+  activatedRoomsThisTurn = [],
   onSpaceClick,
   onWallClick
 }) => {
@@ -46,11 +48,12 @@ export const CaveBoard: React.FC<Props> = ({
         {grid.flat().map((space, idx) => {
           if (!space) return <div key={idx} className="w-36 h-36 opacity-20 bg-stone-900 rounded-lg border-2 border-stone-800" title="Solid Rock" />; // Solid rock placeholder
           
+          const isActivated = activatedRoomsThisTurn.includes(space.id);
           const isExcavatable = isExcavating && space.state === 'FACE_DOWN' && accessibleSpaces.includes(space.id);
           const isFurnishable = isFurnishing && 
             (space.state === 'EMPTY' || space.state === 'CROSSED_PICKAXES') &&
             (!selectedRoomTile || isValidRoomPlacement(space.row, space.col, walls, selectedRoomTile.wallRequirement));
-          const isActionable = isRoomAction && space.state === 'FURNISHED' && space.tile?.trigger === 'action';
+          const isActionable = isRoomAction && (space.state === 'FURNISHED' || space.state === 'ENTRANCE') && space.tile?.trigger === 'action' && !isActivated;
           const isClickable = isExcavatable || isFurnishable || isActionable;
 
           const rightWallId = `${space.row},${space.col}-${space.row},${space.col + 1}`;
@@ -62,10 +65,10 @@ export const CaveBoard: React.FC<Props> = ({
           const hasRightWall = walls.includes(rightWallId);
           const hasBottomWall = walls.includes(bottomWallId);
 
-          const isTopPerimeter = space.row === 0;
-          const isBottomPerimeter = (space.row === 4 && space.col !== 2) || (space.row === 3 && space.col === 2);
+          const isTopPerimeter = space.row === 0 || (space.row === 4 && space.col === 2);
+          const isBottomPerimeter = space.row === 4;
           const isLeftPerimeter = space.col === 0 && space.row !== 3;
-          const isRightPerimeter = (space.col === 2 && space.row !== 4) || (space.col === 1 && space.row === 4);
+          const isRightPerimeter = (space.col === 1 && space.row !== 4) || (space.col === 2 && space.row === 4);
 
           return (
             <div key={space.id} className="relative w-36 h-36">
@@ -77,7 +80,7 @@ export const CaveBoard: React.FC<Props> = ({
 
               <div 
                 onClick={() => isClickable && onSpaceClick(space.id)}
-                className={`w-full h-full rounded-lg flex flex-col items-center justify-center text-center p-2 border-2 transition-all
+                className={`w-full h-full rounded-lg flex flex-col items-center justify-center text-center p-2 border-2 transition-all relative
                   ${space.state === 'FACE_DOWN' && !isExcavatable ? 'bg-stone-600 border-stone-500 shadow-inner' : ''}
                   ${space.state === 'FACE_DOWN' && isExcavatable ? 'bg-stone-500 border-orange-400 shadow-inner cursor-pointer hover:bg-stone-400 ring-4 ring-orange-400/50 animate-pulse' : ''}
                   ${space.state === 'ENTRANCE' ? 'bg-orange-200 border-orange-400' : ''}
@@ -88,8 +91,14 @@ export const CaveBoard: React.FC<Props> = ({
                   ${space.state === 'EMPTY' && !isFurnishable ? 'bg-stone-800/50 border-dashed border-stone-600' : ''}
                   ${space.state === 'EMPTY' && isFurnishable ? 'bg-stone-800/80 border-dashed border-orange-400 cursor-pointer hover:bg-stone-700 ring-4 ring-orange-400/50 animate-pulse' : ''}
                   ${isActionable ? 'ring-4 ring-green-400/50 cursor-pointer hover:scale-105 animate-pulse' : ''}
+                  ${isActivated ? 'opacity-60 grayscale-[0.5] border-stone-400' : ''}
                 `}
               >
+                {isActivated && (
+                  <div className="absolute inset-0 bg-stone-900/20 flex items-center justify-center pointer-events-none z-20 rounded-lg">
+                    <span className="bg-stone-800/90 text-stone-400 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border border-stone-600 shadow-lg transform -rotate-12">Activated</span>
+                  </div>
+                )}
                 {space.state === 'FACE_DOWN' && <span className="text-stone-400 text-xs font-bold uppercase tracking-widest">Unexcavated</span>}
                 
                 {space.state === 'CROSSED_PICKAXES' && (
@@ -99,12 +108,21 @@ export const CaveBoard: React.FC<Props> = ({
                   </div>
                 )}
                 
-                {space.state === 'ENTRANCE' && <span className="text-orange-800 text-sm font-bold leading-tight">Cave<br/>Entrance</span>}
+                {space.state === 'ENTRANCE' && (
+                  <>
+                    <span className="text-orange-800 text-sm font-bold leading-tight">Cave<br/>Entrance</span>
+                    {space.tile?.trigger === 'action' && (
+                      <span className="text-[10px] text-stone-700 leading-tight mt-2 px-1">{space.tile.effectDescription}</span>
+                    )}
+                  </>
+                )}
                 
                 {space.state === 'FURNISHED' && space.tile && (
                   <>
-                    <WallRequirementIcon req={space.tile.wallRequirement} className="absolute top-1.5 left-1.5" />
-                    <span className="text-sm font-bold text-stone-800 leading-tight mt-1">{space.tile.name}</span>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <span className="text-sm font-bold text-stone-800 leading-tight">{space.tile.name}</span>
+                      <WallRequirementIcon req={space.tile.wallRequirement} />
+                    </div>
                     <span className="text-[10px] text-stone-700 leading-tight mt-2 px-1">{space.tile.effectDescription}</span>
                     <span className="absolute bottom-1 right-1 bg-stone-800 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">{space.tile.vp} VP</span>
                   </>

@@ -3,10 +3,11 @@ import { ActionBoardState } from '../types/game';
 
 interface Props {
   board: ActionBoardState;
+  activeActionTile?: string;
   onTakeAction: (actionId: string) => void;
 }
 
-export const ActionBoard: React.FC<Props> = ({ board, onTakeAction }) => {
+export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAction }) => {
   return (
     <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700">
       <div className="flex justify-between items-center mb-3">
@@ -46,21 +47,25 @@ export const ActionBoard: React.FC<Props> = ({ board, onTakeAction }) => {
       <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
         {board.availableActions.map(action => {
           const isUsed = board.usedActionsThisRound.includes(action.id);
+          const isActive = activeActionTile === action.id;
           return (
             <button
               key={action.id}
-              disabled={isUsed}
+              disabled={isUsed || isActive}
               onClick={() => onTakeAction(action.id)}
               title={action.description}
               className={`w-32 h-32 p-2 rounded-lg border-2 text-center transition-all flex flex-col items-center justify-center flex-shrink-0 snap-start relative
                 ${isUsed 
                   ? 'bg-stone-900 border-stone-800 opacity-40 cursor-not-allowed' 
+                  : isActive
+                  ? 'bg-orange-900/40 border-orange-500 ring-4 ring-orange-500/30 cursor-default'
                   : 'bg-stone-700 border-stone-500 hover:border-orange-400 hover:bg-stone-600 cursor-pointer shadow-md'
                 }`}
             >
               <span className="font-bold text-stone-100 text-xs mb-1 leading-tight">{action.name}</span>
               <span className="text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-4">{action.description}</span>
               {isUsed && <span className="absolute bottom-1 bg-stone-900/80 px-2 py-0.5 rounded text-red-400 text-[10px] font-bold uppercase tracking-wider">Used</span>}
+              {isActive && <span className="absolute bottom-1 bg-orange-600 px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">Active</span>}
             </button>
           );
         })}

@@ -15,8 +15,9 @@ export function isValidRoomPlacement(row: number, col: number, internalWalls: st
   const walls = getSpaceWalls(row, col, internalWalls);
   const count = (walls.top ? 1 : 0) + (walls.right ? 1 : 0) + (walls.bottom ? 1 : 0) + (walls.left ? 1 : 0);
 
-  // The room requires at least `req.min` walls.
+  // The room requires between `req.min` and `req.max` walls.
   if (count < req.min) return false;
+  if (count > req.max) return false;
 
   // If the tile requires exactly 2 walls and the space has exactly 2 walls,
   // we must ensure the space's walls match the required configuration.
@@ -33,7 +34,5 @@ export function isValidRoomPlacement(row: number, col: number, internalWalls: st
     }
   }
 
-  // We ignore req.max because the game rules state:
-  // "It does not matter if there are more walls in your cave than required by the room tile."
   return true;
 }

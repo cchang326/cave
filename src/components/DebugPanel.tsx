@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Settings, X, Trophy } from 'lucide-react';
-import { GameState } from '../types/game';
+import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
+import { MOCK_ROOM_TILES } from '../data/mockTiles';
 
 export interface DebugState {
-  ignoreResourceValidation: boolean;
+  // No state needed for now, but keeping the interface for consistency
 }
 
 interface Props {
@@ -19,18 +20,54 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
   
   const currentScore = calculateScore(gameState);
 
-  const handleInfiniteResources = () => {
+  const handleMaxOutResources = () => {
     setGameState(prev => ({
       ...prev,
       goods: {
-        wood: 99,
-        stone: 99,
-        emmer: 99,
-        flax: 99,
-        food: 99,
-        gold: 99
+        wood: 9,
+        stone: 9,
+        emmer: 9,
+        flax: 9,
+        food: 9,
+        gold: 19
       }
     }));
+  };
+
+  const handleDebugExcavateAll = () => {
+    setGameState(prev => {
+      const hiddenTiles: RoomTile[] = [];
+      
+      // 1. Excavate all FACE_DOWN spaces to EMPTY and collect their tiles
+      const newCave = prev.cave.map(space => {
+        if (space.state === 'FACE_DOWN') {
+          if (space.tile) {
+            hiddenTiles.push(space.tile);
+          }
+          return { ...space, state: 'EMPTY' as const, tile: undefined };
+        }
+        return space;
+      });
+
+      // 2. Find all tiles currently furnished in the cave
+      const tilesInCave = new Set(
+        newCave
+          .filter(s => s.state === 'FURNISHED' || s.state === 'ENTRANCE')
+          .filter(s => s.tile)
+          .map(s => s.tile!.id)
+      );
+
+      // 3. Central display should have its current tiles + hidden tiles from cave + all tiles from deck
+      // We filter by MOCK_ROOM_TILES to ensure we have all possible tiles that are NOT in the cave
+      const newCentralDisplay = MOCK_ROOM_TILES.filter(tile => !tilesInCave.has(tile.id));
+
+      return {
+        ...prev,
+        cave: newCave,
+        centralDisplay: newCentralDisplay,
+        roomTileDeck: []
+      };
+    });
   };
 
   if (!isOpen) {
@@ -71,32 +108,18 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
           </div>
         </div>
 
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative flex items-center">
-              <input
-                type="checkbox"
-                checked={debugState.ignoreResourceValidation}
-                onChange={(e) => setDebugState(prev => ({ ...prev, ignoreResourceValidation: e.target.checked }))}
-                className="sr-only peer"
-              />
-              <div className="w-10 h-6 bg-stone-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-            </div>
-            <span className="text-sm font-medium text-stone-300 group-hover:text-stone-100 transition-colors">
-              Ignore Resource Costs
-            </span>
-          </label>
-          <p className="text-xs text-stone-500 leading-relaxed">
-            When enabled, you can perform actions, furnish rooms, and use room actions even if you don't have the required resources.
-          </p>
-        </div>
-
-        <div className="pt-4 border-t border-stone-700">
+        <div className="pt-4 border-t border-stone-700 space-y-2">
           <button
-            onClick={handleInfiniteResources}
+            onClick={handleMaxOutResources}
             className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
           >
-            Infinite Resource (99)
+            Max out Resource
+          </button>
+          <button
+            onClick={handleDebugExcavateAll}
+            className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
+          >
+            Excavate All
           </button>
         </div>
       </div>
