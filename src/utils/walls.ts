@@ -1,18 +1,38 @@
-import { WallRequirement } from '../types/game';
+import { CaveSpace, WallRequirement } from '../types/game';
 
-export function getSpaceWalls(row: number, col: number, internalWalls: string[]) {
-  const top = row === 0 || (row === 4 && col === 2) || internalWalls.includes(`${row - 1},${col}-${row},${col}`);
-  const bottom = row === 4 || internalWalls.includes(`${row},${col}-${row + 1},${col}`);
-  const left = (col === 0 && row !== 3) || internalWalls.includes(`${row},${col - 1}-${row},${col}`);
-  const right = (col === 1 && row !== 4) || (col === 2 && row === 4) || internalWalls.includes(`${row},${col}-${row},${col + 1}`);
+export function getSpaceWalls(space: CaveSpace, internalWalls: string[]) {
+  const { row, col, openSides = [] } = space;
+  
+  // Original Cave logic (rows 0-4, cols 0-2)
+  const isOriginalCave = row <= 4 && col <= 2;
+  
+  let top = internalWalls.includes(`${row - 1},${col}-${row},${col}`);
+  let bottom = internalWalls.includes(`${row},${col}-${row + 1},${col}`);
+  let left = internalWalls.includes(`${row},${col - 1}-${row},${col}`);
+  let right = internalWalls.includes(`${row},${col}-${row},${col + 1}`);
+
+  if (isOriginalCave) {
+    if (row === 0) top = true;
+    if (row === 4 && col === 2) top = true;
+    if (row === 4) bottom = true;
+    if (col === 0 && row !== 3) left = true;
+    if (col === 1 && row !== 4) right = true;
+    if (col === 2 && row === 4) right = true;
+  } else {
+    // Additional Cavern or other spaces
+    if (!openSides.includes('top')) top = true;
+    if (!openSides.includes('bottom')) bottom = true;
+    if (!openSides.includes('left')) left = true;
+    if (!openSides.includes('right')) right = true;
+  }
 
   return { top, right, bottom, left };
 }
 
-export function isValidRoomPlacement(row: number, col: number, internalWalls: string[], req?: WallRequirement): boolean {
+export function isValidRoomPlacement(space: CaveSpace, internalWalls: string[], req?: WallRequirement): boolean {
   if (!req) return true;
 
-  const walls = getSpaceWalls(row, col, internalWalls);
+  const walls = getSpaceWalls(space, internalWalls);
   const count = (walls.top ? 1 : 0) + (walls.right ? 1 : 0) + (walls.bottom ? 1 : 0) + (walls.left ? 1 : 0);
 
   // The room requires between `req.min` and `req.max` walls.

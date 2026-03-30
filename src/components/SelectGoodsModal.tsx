@@ -6,11 +6,12 @@ interface Props {
   goods: GoodsState;
   amount: number;
   mustBeDifferent: boolean;
+  exclude?: Array<keyof GoodsState>;
   onConfirm: (selected: Partial<GoodsState>) => void;
   onCancel: () => void;
 }
 
-export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDifferent, onConfirm, onCancel }) => {
+export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDifferent, exclude = [], onConfirm, onCancel }) => {
   const [selected, setSelected] = useState<Partial<GoodsState>>({});
 
   const totalSelected = Object.values(selected).reduce((sum, val) => (sum as number) + ((val as number) || 0), 0) as number;
@@ -40,30 +41,32 @@ export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDiffere
         </p>
 
         <div className="grid grid-cols-2 gap-3 mb-8">
-          {(Object.keys(goods) as Array<keyof GoodsState>).map(good => {
-            const isSelected = !!selected[good];
-            const hasGood = goods[good] > 0;
-            const disabled = !isSelected && (!hasGood || totalSelected >= amount);
+          {(Object.keys(goods) as Array<keyof GoodsState>)
+            .filter(good => !exclude.includes(good))
+            .map(good => {
+              const isSelected = !!selected[good];
+              const hasGood = goods[good] > 0;
+              const disabled = !isSelected && (!hasGood || totalSelected >= amount);
 
-            return (
-              <button
-                key={good}
-                onClick={() => handleToggle(good)}
-                disabled={disabled}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all
-                  ${isSelected ? 'bg-orange-900/40 border-orange-500 text-orange-100' : 
-                    disabled ? 'bg-stone-900/50 border-stone-800 text-stone-600 cursor-not-allowed' : 
-                    'bg-stone-700 border-stone-600 hover:border-stone-400 text-stone-200'}
-                `}
-              >
-                <span className="capitalize font-bold">{good}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs opacity-70">Owned: {goods[good]}</span>
-                  {isSelected && <Check className="w-4 h-4 text-orange-400" />}
-                </div>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={good}
+                  onClick={() => handleToggle(good)}
+                  disabled={disabled}
+                  className={`flex items-center justify-between p-3 rounded-lg border transition-all
+                    ${isSelected ? 'bg-orange-900/40 border-orange-500 text-orange-100' : 
+                      disabled ? 'bg-stone-900/50 border-stone-800 text-stone-600 cursor-not-allowed' : 
+                      'bg-stone-700 border-stone-600 hover:border-stone-400 text-stone-200'}
+                  `}
+                >
+                  <span className="capitalize font-bold">{good}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs opacity-70">Owned: {goods[good]}</span>
+                    {isSelected && <Check className="w-4 h-4 text-orange-400" />}
+                  </div>
+                </button>
+              );
+            })}
         </div>
 
         <div className="flex justify-end gap-3">

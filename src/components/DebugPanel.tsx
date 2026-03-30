@@ -70,6 +70,16 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
     });
   };
 
+  const handleTriggerAdditionalCavern = () => {
+    setGameState(prev => ({
+      ...prev,
+      uiState: {
+        ...prev.uiState,
+        showAdditionalCavernChoice: true
+      }
+    }));
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -121,6 +131,14 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
           >
             Excavate All
           </button>
+          {!gameState.hasAdditionalCavern && (
+            <button
+              onClick={handleTriggerAdditionalCavern}
+              className="w-full py-2 bg-orange-900/40 hover:bg-orange-900/60 text-orange-200 border border-orange-800/50 rounded-lg text-sm font-bold transition-colors"
+            >
+              Trigger Add. Cavern
+            </button>
+          )}
         </div>
       </div>
     </div>

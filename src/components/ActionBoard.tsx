@@ -63,7 +63,7 @@ export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAc
                 }`}
             >
               <span className="font-bold text-stone-100 text-xs mb-1 leading-tight">{action.name}</span>
-              <span className="text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-4">{action.description}</span>
+              <div className="text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-4">{action.description}</div>
               {isUsed && <span className="absolute bottom-1 bg-stone-900/80 px-2 py-0.5 rounded text-red-400 text-[10px] font-bold uppercase tracking-wider">Used</span>}
               {isActive && <span className="absolute bottom-1 bg-orange-600 px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">Active</span>}
             </button>

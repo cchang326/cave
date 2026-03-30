@@ -21,7 +21,7 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 1, max: 1, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Set either wood or stone or emmer or flax to 2.'
+    effectDescription: 'Replenish either wood or stone or emmer or flax to 2.'
   },
   {
     id: 'spinning_wheel',
@@ -61,7 +61,7 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 2, max: 2, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Set food to 3'
+    effectDescription: 'Replenish food to 3'
   },
   {
     id: 'parlor',

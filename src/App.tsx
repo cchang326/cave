@@ -10,6 +10,7 @@ import { ChecklistUI } from './components/ChecklistUI';
 import { ScoreSummary } from './components/ScoreSummary';
 import { DebugPanel, DebugState } from './components/DebugPanel';
 import { SelectGoodsModal } from './components/SelectGoodsModal';
+import { AdditionalCavernModal } from './components/AdditionalCavernModal';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
 import { isValidRoomPlacement } from './utils/walls';
 
@@ -68,8 +69,15 @@ function subtractGoods(current: GameState['goods'], costs: Partial<GameState['go
 }
 
 function initializeGame(): GameState {
-  // Shuffle all 24 mock room tiles
-  const allTiles = [...MOCK_ROOM_TILES].sort(() => Math.random() - 0.5);
+  // 3 out of the 6 unexcavatable rooms (tile 1-6) are randomly selected and removed from the game.
+  // The remaining 3 are placed in the central display during initial setup.
+  const unexcavatable = MOCK_ROOM_TILES.slice(0, 6);
+  const shuffledUnexcavatable = [...unexcavatable].sort(() => Math.random() - 0.5);
+  const removedUnexcavatable = shuffledUnexcavatable.slice(0, 3);
+  const displayUnexcavatable = shuffledUnexcavatable.slice(3, 6);
+  
+  const otherTiles = MOCK_ROOM_TILES.slice(6);
+  const shuffledOther = [...otherTiles].sort(() => Math.random() - 0.5);
 
   const initialCave: CaveSpace[] = [];
   for (let row = 0; row < 5; row++) {
@@ -85,7 +93,7 @@ function initializeGame(): GameState {
       } else if (row === 2 && col === 0) {
         state = 'CROSSED_PICKAXES';
       } else {
-        tile = allTiles.pop(); // Take 10 tiles for the cave
+        tile = shuffledOther.pop(); // Take 10 tiles for the cave
       }
 
       initialCave.push({
@@ -123,8 +131,9 @@ function initializeGame(): GameState {
     cave: initialCave,
     walls: [],
     actionBoard: initialActionBoard,
-    centralDisplay: allTiles.splice(0, 4), // Take 4 for the display
-    roomTileDeck: allTiles, // Remaining 10 in the deck
+    centralDisplay: displayUnexcavatable, // The 3 remaining unexcavatable tiles
+    roomTileDeck: shuffledOther, // Remaining 8 in the deck
+    hasAdditionalCavern: false,
     uiState: {
       mode: 'IDLE',
       excavationsLeft: 0,
@@ -135,7 +144,8 @@ function initializeGame(): GameState {
       dynamicCostAmount: 0,
       checklist: [],
       activatedRoomsThisTurn: []
-    }
+    },
+    conversionHistory: []
   };
 }
 
@@ -157,6 +167,7 @@ export default function App() {
       const checklist = generateChecklistForAction(actionId, prev.actionBoard, prev.cave);
       return {
         ...prev,
+        conversionHistory: [],
         uiState: {
           ...prev.uiState,
           mode: 'RESOLVING_TURN',
@@ -169,9 +180,39 @@ export default function App() {
     });
   };
 
+  const handleSelectAdditionalCavern = (walls: 2 | 3) => {
+    setGameState(prev => {
+      const nextState = { 
+        ...prev, 
+        hasAdditionalCavern: true,
+        cave: [...prev.cave],
+        uiState: { ...prev.uiState, showAdditionalCavernChoice: false }
+      };
+
+      const openSides: ('top' | 'bottom' | 'left' | 'right')[] = [];
+      if (walls === 2) {
+        // 2 adjacent walls (e.g., top and left are natural, so bottom and right are open)
+        openSides.push('bottom', 'right');
+      } else {
+        // 3 walls (e.g., top, left, right are natural, so bottom is open)
+        openSides.push('bottom');
+      }
+
+      nextState.cave.push({
+        id: 'additional-cavern',
+        row: 4,
+        col: 4,
+        state: 'EMPTY',
+        openSides
+      });
+
+      return nextState;
+    });
+  };
+
   const handleExecuteChecklist = (id: string, isManual: boolean = true) => {
     setGameState(prev => {
-      const next = { ...prev };
+      const next = { ...prev, conversionHistory: [] };
       next.uiState.hasInteractedWithChecklist = isManual || next.uiState.hasInteractedWithChecklist;
       const checklist = [...next.uiState.checklist];
       const itemIndex = checklist.findIndex(i => i.id === id);
@@ -299,7 +340,7 @@ export default function App() {
 
   const handleSkipChecklist = (id: string, isManual: boolean = true) => {
     setGameState(prev => {
-      const next = { ...prev };
+      const next = { ...prev, conversionHistory: [] };
       next.uiState.hasInteractedWithChecklist = isManual || next.uiState.hasInteractedWithChecklist;
       const checklist = [...next.uiState.checklist];
       const itemIndex = checklist.findIndex(i => i.id === id);
@@ -318,7 +359,7 @@ export default function App() {
 
   const handleChooseChecklist = (id: string, optionIndex: number, isManual: boolean = true) => {
     setGameState(prev => {
-      const next = { ...prev };
+      const next = { ...prev, conversionHistory: [] };
       next.uiState.hasInteractedWithChecklist = isManual || next.uiState.hasInteractedWithChecklist;
       const checklist = [...next.uiState.checklist];
       const itemIndex = checklist.findIndex(i => i.id === id);
@@ -385,7 +426,7 @@ export default function App() {
 
   const handleFinishTurn = () => {
     setGameState(prev => {
-      const nextState = { ...prev };
+      const nextState = { ...prev, conversionHistory: [] };
       const board = nextState.actionBoard;
       const actionId = nextState.uiState.activeActionTile!;
       
@@ -497,6 +538,18 @@ export default function App() {
         const room = prev.centralDisplay.find(r => r.id === roomId);
         if (!room) return prev;
 
+        // Rule: You must always have more orange Rooms than blue Rooms.
+        // You may not build a blue Room if you would have an equal number of orange and blue Rooms.
+        if (room.color === 'blue') {
+          const orangeRooms = prev.cave.filter(s => (s.state === 'FURNISHED' || s.state === 'ENTRANCE') && s.tile?.color === 'orange').length;
+          const blueRooms = prev.cave.filter(s => s.state === 'FURNISHED' && s.tile?.color === 'blue').length;
+          
+          if (blueRooms + 1 >= orangeRooms) {
+            alert("You must always have more orange rooms than blue rooms! You cannot build this blue room right now.");
+            return prev;
+          }
+        }
+
         const itemIndex = prev.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
         const isFree = itemIndex !== -1 && prev.uiState.checklist[itemIndex].data?.freeFurnish;
 
@@ -512,6 +565,7 @@ export default function App() {
 
         return {
           ...prev,
+          conversionHistory: [],
           uiState: { ...prev.uiState, mode: 'FURNISH_SELECT_SPACE', selectedRoomId: roomId }
         };
       }
@@ -521,7 +575,7 @@ export default function App() {
 
   const handleSpaceClick = (spaceId: string) => {
     setGameState(prev => {
-      const nextState = { ...prev, uiState: { ...prev.uiState, hasInteractedWithChecklist: true }, cave: [...prev.cave], centralDisplay: [...prev.centralDisplay], goods: { ...prev.goods } };
+      const nextState = { ...prev, conversionHistory: [], uiState: { ...prev.uiState, hasInteractedWithChecklist: true }, cave: [...prev.cave], centralDisplay: [...prev.centralDisplay], goods: { ...prev.goods } };
       nextState.uiState.checklist = [...prev.uiState.checklist];
 
       if (prev.uiState.mode === 'EXCAVATE') {
@@ -554,6 +608,14 @@ export default function App() {
           const doingItem = { ...nextState.uiState.checklist[itemIndex] };
           if (doingItem.data) {
             doingItem.data = { ...doingItem.data, count: nextState.uiState.excavationsLeft };
+            
+            // Add food bonus if space is (1,1) or (3,1)
+            if ((space.row === 1 && space.col === 1) || (space.row === 3 && space.col === 1)) {
+              doingItem.data.gainAfter = { 
+                ...(doingItem.data.gainAfter || {}), 
+                food: (doingItem.data.gainAfter?.food || 0) + 1 
+              };
+            }
           }
           nextState.uiState.checklist[itemIndex] = doingItem;
         }
@@ -575,7 +637,7 @@ export default function App() {
         const roomToPlace = prev.centralDisplay[roomIndex];
         
         // Validate wall requirements
-        if (!isValidRoomPlacement(space.row, space.col, prev.walls, roomToPlace.wallRequirement)) {
+        if (!isValidRoomPlacement(space, prev.walls, roomToPlace.wallRequirement)) {
           return prev;
         }
 
@@ -628,6 +690,16 @@ export default function App() {
           nextState.uiState.mode = 'FURNISH_SELECT_ROOM';
         }
         nextState.uiState.selectedRoomId = undefined;
+
+        // Check for Additional Cavern
+        if (!nextState.hasAdditionalCavern) {
+          const initialCaveSpaces = nextState.cave.filter(s => s.row < 5 && s.col < 3);
+          const allFilled = initialCaveSpaces.every(s => s.state === 'FURNISHED' || s.state === 'ENTRANCE');
+          if (allFilled) {
+            nextState.uiState.showAdditionalCavernChoice = true;
+          }
+        }
+
         checkCompletion(nextState);
         return nextState;
       }
@@ -688,12 +760,22 @@ export default function App() {
     if (gameState.uiState.mode !== 'BUILD_WALL' && gameState.uiState.mode !== 'REMOVE_WALL') return;
 
     setGameState(prev => {
-      const nextState = { ...prev, uiState: { ...prev.uiState, hasInteractedWithChecklist: true } };
+      const nextState = { ...prev, conversionHistory: [], uiState: { ...prev.uiState, hasInteractedWithChecklist: true } };
       
       if (prev.uiState.mode === 'BUILD_WALL') {
         if (nextState.walls.includes(wallId)) return prev;
+        
+        if (nextState.walls.length >= 7) {
+          alert("Maximum of 7 walls reached! You cannot build any more walls.");
+          return prev;
+        }
 
         nextState.walls = [...nextState.walls, wallId];
+        
+        if (nextState.walls.length === 7) {
+          alert("You have built your 7th and final wall!");
+        }
+
         nextState.uiState.wallsLeft -= 1;
 
         const checklist = [...nextState.uiState.checklist];
@@ -704,6 +786,21 @@ export default function App() {
             ...checklist[itemIndex], 
             data: { ...checklist[itemIndex].data, count: nextState.uiState.wallsLeft } 
           };
+
+          // Dungeon: Each time you build a wall, also gain 2 gold.
+          const hasDungeon = nextState.cave.some(s => s.state === 'FURNISHED' && s.tile?.id === 'dungeon');
+          if (hasDungeon) {
+            const dungeonItem = {
+              id: `dungeon_${Date.now()}_${wallId}`,
+              text: 'Passive: Dungeon — Gain 2 gold',
+              actionType: 'GAIN' as const,
+              status: 'TODO' as const,
+              optional: true,
+              data: { goods: { gold: 2 } }
+            };
+            // Insert it right after the current BUILD_WALL item
+            checklist.splice(itemIndex + 1, 0, dungeonItem);
+          }
         }
         
         nextState.uiState.checklist = checklist;
@@ -742,13 +839,38 @@ export default function App() {
 
   const handleUndoAction = () => {
     if (gameState.uiState.undoSnapshot) {
-      setGameState(JSON.parse(gameState.uiState.undoSnapshot));
+      const nextState = JSON.parse(gameState.uiState.undoSnapshot);
+      nextState.conversionHistory = [];
+      setGameState(nextState);
     }
+  };
+
+  const handleExchange = (from: keyof GoodsState, to: keyof GoodsState) => {
+    setGameState(prev => {
+      if (prev.goods[from] <= 0) return prev;
+      const nextState = { ...prev, goods: { ...prev.goods } };
+      nextState.goods[from] -= 1;
+      nextState.goods[to] += 1;
+      nextState.conversionHistory = [...prev.conversionHistory, from];
+      return nextState;
+    });
+  };
+
+  const handleUndoConversion = () => {
+    setGameState(prev => {
+      if (prev.conversionHistory.length === 0) return prev;
+      const nextHistory = [...prev.conversionHistory];
+      const lastFrom = nextHistory.pop()!;
+      const nextState = { ...prev, goods: { ...prev.goods }, conversionHistory: nextHistory };
+      nextState.goods[lastFrom] += 1;
+      nextState.goods.food -= 1;
+      return nextState;
+    });
   };
 
   const handleCancelItem = () => {
     setGameState(prev => {
-      const nextState = { ...prev, uiState: { ...prev.uiState }, goods: { ...prev.goods } };
+      const nextState = { ...prev, conversionHistory: [], uiState: { ...prev.uiState }, goods: { ...prev.goods } };
       const checklist = [...nextState.uiState.checklist];
       const itemIndex = checklist.findIndex(i => i.status === 'DOING');
       
@@ -802,6 +924,7 @@ export default function App() {
             goods={gameState.goods}
             amount={gameState.uiState.dynamicCostAmount}
             mustBeDifferent={true} // Junction Room requires different goods
+            exclude={gameState.uiState.checklist.find(i => i.status === 'DOING' && i.actionType === 'PAY_DYNAMIC')?.data?.exclude}
             onConfirm={(selected) => {
               setGameState(prev => {
                 const nextState = { ...prev };
@@ -843,54 +966,6 @@ export default function App() {
             <p className="text-stone-400">Solo Implementation</p>
           </div>
           <div className="flex items-center gap-4">
-            {gameState.uiState.mode === 'EXCAVATE' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-orange-500/20 text-orange-400 px-4 py-2 rounded-lg border border-orange-500/50 font-bold animate-pulse">
-                  Select a tile to excavate! ({gameState.uiState.excavationsLeft} left)
-                </div>
-                <button onClick={handleCancelItem} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Cancel</button>
-              </div>
-            )}
-            {gameState.uiState.mode === 'FURNISH_SELECT_ROOM' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-500/20 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/50 font-bold animate-pulse">
-                  Select a room from the Central Display to furnish! ({gameState.uiState.furnishingsLeft} left)
-                </div>
-                <button onClick={handleCancelItem} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Cancel</button>
-              </div>
-            )}
-            {gameState.uiState.mode === 'FURNISH_SELECT_SPACE' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-500/20 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/50 font-bold animate-pulse">
-                  Select an empty space in your cave to place the room!
-                </div>
-                <button onClick={() => setGameState(prev => ({...prev, uiState: {...prev.uiState, mode: 'FURNISH_SELECT_ROOM', selectedRoomId: undefined}}))} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Back</button>
-              </div>
-            )}
-            {gameState.uiState.mode === 'ROOM_ACTION' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-green-500/20 text-green-400 px-4 py-2 rounded-lg border border-green-500/50 font-bold animate-pulse">
-                  Select a furnished room in your cave to use its action! ({gameState.uiState.roomActionsLeft} left)
-                </div>
-                <button onClick={handleCancelItem} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Cancel</button>
-              </div>
-            )}
-            {gameState.uiState.mode === 'BUILD_WALL' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-orange-500/20 text-orange-400 px-4 py-2 rounded-lg border border-orange-500/50 font-bold animate-pulse">
-                  Click between spaces to build a wall! ({gameState.uiState.wallsLeft} left)
-                </div>
-                <button onClick={handleCancelItem} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Cancel</button>
-              </div>
-            )}
-            {gameState.uiState.mode === 'REMOVE_WALL' && (
-              <div className="flex items-center gap-2">
-                <div className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg border border-red-500/50 font-bold animate-pulse">
-                  Click a wall to remove it! ({gameState.uiState.wallsToRemoveLeft} left)
-                </div>
-                <button onClick={handleCancelItem} className="px-3 py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded border border-stone-500 text-sm font-bold">Cancel</button>
-              </div>
-            )}
             <button 
               onClick={() => setGameState(initializeGame())}
               className="text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
@@ -910,29 +985,17 @@ export default function App() {
                 onTakeAction={handleTakeAction} 
               />
             </div>
-            {gameState.uiState.mode !== 'IDLE' && gameState.uiState.checklist.length > 0 && (
-              <div className="w-80 shrink-0">
-                <ChecklistUI 
-                  checklist={gameState.uiState.checklist}
-                  goods={gameState.goods}
-                  onExecute={handleExecuteChecklist}
-                  onSkip={handleSkipChecklist}
-                  onChoose={handleChooseChecklist}
-                  onFinishTurn={handleFinishTurn}
-                  onUndoAction={handleUndoAction}
-                  canUndoAction={!gameState.uiState.hasInteractedWithChecklist && !!gameState.uiState.undoSnapshot}
-                />
-              </div>
-            )}
           </section>
 
-          {/* Bottom Area: Goods (Left) + Cave (Center) + Display (Right) */}
-          <section className="flex flex-col xl:flex-row gap-8 items-start flex-1 overflow-hidden">
-            <div className="w-full xl:w-24 shrink-0">
-              <GoodsTrack goods={gameState.goods} />
-            </div>
-            
-            <div className="shrink-0 overflow-auto pb-8">
+          {/* Bottom Area: Cave (Center) + Checklist (Middle) + Display (Right) */}
+          <section className="flex flex-col xl:flex-row items-start flex-1 overflow-hidden gap-4">
+            <div className="flex-1 overflow-auto pb-8 space-y-4">
+              <GoodsTrack 
+                goods={gameState.goods} 
+                onExchange={handleExchange} 
+                onUndoExchange={handleUndoConversion}
+                canUndoExchange={gameState.conversionHistory.length > 0}
+              />
               <CaveBoard 
                 cave={gameState.cave} 
                 walls={gameState.walls}
@@ -946,10 +1009,26 @@ export default function App() {
                 activatedRoomsThisTurn={gameState.uiState.activatedRoomsThisTurn}
                 onSpaceClick={handleSpaceClick}
                 onWallClick={handleWallClick}
-              />
+              >
+                <ChecklistUI 
+                  checklist={gameState.uiState.checklist}
+                  goods={gameState.goods}
+                  onExecute={handleExecuteChecklist}
+                  onSkip={handleSkipChecklist}
+                  onChoose={handleChooseChecklist}
+                  onFinishTurn={handleFinishTurn}
+                  onUndoAction={handleUndoAction}
+                  canUndoAction={gameState.uiState.mode === 'RESOLVING_TURN' && !!gameState.uiState.undoSnapshot}
+                  onCancel={
+                    gameState.uiState.mode === 'FURNISH_SELECT_SPACE'
+                      ? () => setGameState(prev => ({...prev, uiState: {...prev.uiState, mode: 'FURNISH_SELECT_ROOM', selectedRoomId: undefined}}))
+                      : (['EXCAVATE', 'ROOM_ACTION', 'BUILD_WALL', 'REMOVE_WALL', 'PAY_DYNAMIC', 'FURNISH_SELECT_ROOM'].includes(gameState.uiState.mode) ? handleCancelItem : undefined)
+                  }
+                />
+              </CaveBoard>
             </div>
 
-            <div className="flex-1 overflow-auto pb-8 min-w-[300px] h-full">
+            <div className="flex-none w-[620px] overflow-auto pb-8 h-full">
               <CentralDisplay 
                 tiles={gameState.centralDisplay} 
                 isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM'}
@@ -961,6 +1040,9 @@ export default function App() {
         </main>
       </div>
       <DebugPanel debugState={debugState} setDebugState={setDebugState} gameState={gameState} setGameState={setGameState} />
+      {gameState.uiState.showAdditionalCavernChoice && (
+        <AdditionalCavernModal onSelect={handleSelectAdditionalCavern} />
+      )}
     </div>
   );
 }

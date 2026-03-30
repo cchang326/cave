@@ -1,6 +1,6 @@
 import React from 'react';
 import { CaveSpace, RoomTile } from '../types/game';
-import { Pickaxe } from 'lucide-react';
+import { Pickaxe, Ban, Drumstick } from 'lucide-react';
 import { isValidRoomPlacement } from '../utils/walls';
 import { WallRequirementIcon } from './WallRequirementIcon';
 
@@ -17,6 +17,7 @@ interface Props {
   activatedRoomsThisTurn?: string[];
   onSpaceClick: (id: string) => void;
   onWallClick?: (wallId: string) => void;
+  children?: React.ReactNode;
 }
 
 export const CaveBoard: React.FC<Props> = ({ 
@@ -31,47 +32,67 @@ export const CaveBoard: React.FC<Props> = ({
   selectedRoomTile,
   activatedRoomsThisTurn = [],
   onSpaceClick,
-  onWallClick
+  onWallClick,
+  children
 }) => {
-  // Group into a 5x3 grid for display
-  const grid = Array.from({ length: 5 }, (_, row) => 
-    Array.from({ length: 3 }, (_, col) => {
-      if (col === 2 && row !== 4) return null; // The empty cutout area
+  // Group into a dynamic grid for display
+  const maxRow = Math.max(...cave.map(s => s.row), 4);
+  const maxCol = Math.max(...cave.map(s => s.col), 2);
+  
+  const grid = Array.from({ length: maxRow + 1 }, (_, row) => 
+    Array.from({ length: maxCol + 1 }, (_, col) => {
       return cave.find(c => c.row === row && c.col === col) || null;
     })
   );
 
   return (
-    <div className="bg-stone-700 p-8 rounded-xl shadow-2xl border-4 border-stone-800 inline-block">
-      <h2 className="text-stone-300 text-sm font-bold uppercase tracking-wider mb-6 text-center">Your Cave</h2>
-      <div className="grid grid-cols-3 gap-4">
-        {grid.flat().map((space, idx) => {
-          if (!space) return <div key={idx} className="w-36 h-36 opacity-20 bg-stone-900 rounded-lg border-2 border-stone-800" title="Solid Rock" />; // Solid rock placeholder
-          
+    <div className={`bg-stone-700 p-4 rounded-xl shadow-2xl border-4 border-stone-800 relative ${children ? 'w-full' : 'inline-block'}`}>
+      <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest mb-4 text-center">Your Cave</h2>
+      <div 
+        className="grid gap-2 w-full"
+        style={{ 
+          gridTemplateColumns: `repeat(${maxCol + 1}, 8rem) 1fr`,
+          gridTemplateRows: `repeat(${maxRow + 1}, 8rem)`
+        }}
+      >
+        {children && (
+          <div className="row-start-1 row-end-5 col-start-3 col-end-[-1] flex flex-col pl-2 z-0 pointer-events-none">
+            <div className="pointer-events-auto w-full overflow-y-auto max-h-full pr-1">
+              {children}
+            </div>
+          </div>
+        )}
+        {cave.map((space) => {
           const isActivated = activatedRoomsThisTurn.includes(space.id);
           const isExcavatable = isExcavating && space.state === 'FACE_DOWN' && accessibleSpaces.includes(space.id);
           const isFurnishable = isFurnishing && 
             (space.state === 'EMPTY' || space.state === 'CROSSED_PICKAXES') &&
-            (!selectedRoomTile || isValidRoomPlacement(space.row, space.col, walls, selectedRoomTile.wallRequirement));
+            (!selectedRoomTile || isValidRoomPlacement(space, walls, selectedRoomTile.wallRequirement));
           const isActionable = isRoomAction && (space.state === 'FURNISHED' || space.state === 'ENTRANCE') && space.tile?.trigger === 'action' && !isActivated;
           const isClickable = isExcavatable || isFurnishable || isActionable;
 
           const rightWallId = `${space.row},${space.col}-${space.row},${space.col + 1}`;
           const bottomWallId = `${space.row},${space.col}-${space.row + 1},${space.col}`;
           
-          const hasRightNeighbor = space.col < 2 && grid[space.row][space.col + 1] !== null;
-          const hasBottomNeighbor = space.row < 4 && grid[space.row + 1][space.col] !== null;
+          const hasTopNeighbor = space.row > 0 && grid[space.row - 1][space.col] !== null;
+          const hasBottomNeighbor = space.row < maxRow && grid[space.row + 1][space.col] !== null;
+          const hasLeftNeighbor = space.col > 0 && grid[space.row][space.col - 1] !== null;
+          const hasRightNeighbor = space.col < maxCol && grid[space.row][space.col + 1] !== null;
 
           const hasRightWall = walls.includes(rightWallId);
           const hasBottomWall = walls.includes(bottomWallId);
 
-          const isTopPerimeter = space.row === 0 || (space.row === 4 && space.col === 2);
-          const isBottomPerimeter = space.row === 4;
-          const isLeftPerimeter = space.col === 0 && space.row !== 3;
-          const isRightPerimeter = (space.col === 1 && space.row !== 4) || (space.col === 2 && space.row === 4);
+          const isTopPerimeter = !hasTopNeighbor && !space.openSides?.includes('top');
+          const isBottomPerimeter = !hasBottomNeighbor && !space.openSides?.includes('bottom');
+          const isLeftPerimeter = !hasLeftNeighbor && !(space.row === 3 && space.col === 0) && !space.openSides?.includes('left'); // Entrance exception
+          const isRightPerimeter = !hasRightNeighbor && !space.openSides?.includes('right');
 
           return (
-            <div key={space.id} className="relative w-36 h-36">
+            <div 
+              key={space.id} 
+              className="relative w-32 h-32 z-10"
+              style={{ gridRow: space.row + 1, gridColumn: space.col + 1 }}
+            >
               {/* Perimeter Walls */}
               {isTopPerimeter && <div className="absolute -top-3 left-0 right-0 h-2 bg-stone-900 rounded-full shadow-md z-10" />}
               {isBottomPerimeter && <div className="absolute -bottom-3 left-0 right-0 h-2 bg-stone-900 rounded-full shadow-md z-10" />}
@@ -99,12 +120,34 @@ export const CaveBoard: React.FC<Props> = ({
                     <span className="bg-stone-800/90 text-stone-400 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border border-stone-600 shadow-lg transform -rotate-12">Activated</span>
                   </div>
                 )}
-                {space.state === 'FACE_DOWN' && <span className="text-stone-400 text-xs font-bold uppercase tracking-widest">Unexcavated</span>}
+                {space.state === 'FACE_DOWN' && (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-stone-400 text-[10px] font-bold uppercase tracking-widest">Unexcavated</span>
+                  </div>
+                )}
+
+                {space.state !== 'FACE_DOWN' && ((space.row === 1 && space.col === 1) || (space.row === 3 && space.col === 1)) && (
+                  <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-orange-500/10 px-1 rounded border border-orange-500/20 pointer-events-none">
+                    <span className="text-orange-400/60 text-[8px] font-bold">+1</span>
+                    <Drumstick className="w-2 h-2 text-orange-500/60" />
+                  </div>
+                )}
                 
                 {space.state === 'CROSSED_PICKAXES' && (
-                  <div className="flex text-stone-600 opacity-50">
-                    <Pickaxe className="w-10 h-10 -mr-4 transform rotate-45" />
-                    <Pickaxe className="w-10 h-10 transform -rotate-45" style={{ transform: 'scaleX(-1) rotate(45deg)' }} />
+                  <div className="relative flex items-center justify-center">
+                    {space.row === 2 && space.col === 0 ? (
+                      <div className="relative flex items-center justify-center">
+                        <Pickaxe className="w-10 h-10 text-stone-600 opacity-40" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Ban className="w-12 h-12 text-stone-500/40" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex text-stone-600 opacity-50">
+                        <Pickaxe className="w-10 h-10 -mr-4 transform rotate-45" />
+                        <Pickaxe className="w-10 h-10 transform -rotate-45" style={{ transform: 'scaleX(-1) rotate(45deg)' }} />
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -130,7 +173,7 @@ export const CaveBoard: React.FC<Props> = ({
               </div>
 
               {/* Right Wall */}
-              {hasRightNeighbor && (
+              {!isRightPerimeter && (
                 <div 
                   onClick={() => {
                     if (isBuildingWall && !hasRightWall) onWallClick?.(rightWallId);
@@ -146,7 +189,7 @@ export const CaveBoard: React.FC<Props> = ({
               )}
 
               {/* Bottom Wall */}
-              {hasBottomNeighbor && (
+              {!isBottomPerimeter && (
                 <div 
                   onClick={() => {
                     if (isBuildingWall && !hasBottomWall) onWallClick?.(bottomWallId);

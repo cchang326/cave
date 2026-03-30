@@ -36,6 +36,7 @@ export interface CaveSpace {
   col: number;
   state: SpaceState;
   tile?: RoomTile;
+  openSides?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
 export interface ActionTile {
@@ -80,6 +81,7 @@ export interface UIState {
   activatedRoomsThisTurn: string[];
   hasInteractedWithChecklist?: boolean;
   undoSnapshot?: string;
+  showAdditionalCavernChoice?: boolean;
 }
 
 export interface GameState {
@@ -90,4 +92,6 @@ export interface GameState {
   centralDisplay: RoomTile[];
   roomTileDeck: RoomTile[];
   uiState: UIState;
+  hasAdditionalCavern: boolean;
+  conversionHistory: (keyof GoodsState)[];
 }
