@@ -143,7 +143,8 @@ function initializeGame(): GameState {
       wallsToRemoveLeft: 0,
       dynamicCostAmount: 0,
       checklist: [],
-      activatedRoomsThisTurn: []
+      activatedRoomsThisTurn: [],
+      showIconicDescription: true
     },
     conversionHistory: []
   };
@@ -1007,6 +1008,7 @@ export default function App() {
                 accessibleSpaces={accessibleSpaces}
                 selectedRoomTile={selectedRoomTile}
                 activatedRoomsThisTurn={gameState.uiState.activatedRoomsThisTurn}
+                showIconicDescription={gameState.uiState.showIconicDescription}
                 onSpaceClick={handleSpaceClick}
                 onWallClick={handleWallClick}
               >
@@ -1033,6 +1035,7 @@ export default function App() {
                 tiles={gameState.centralDisplay} 
                 isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM'}
                 selectedRoomId={gameState.uiState.selectedRoomId}
+                showIconicDescription={gameState.uiState.showIconicDescription}
                 onRoomClick={handleRoomClick}
               />
             </div>

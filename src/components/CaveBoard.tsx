@@ -3,6 +3,7 @@ import { CaveSpace, RoomTile } from '../types/game';
 import { Pickaxe, Ban, Drumstick } from 'lucide-react';
 import { isValidRoomPlacement } from '../utils/walls';
 import { WallRequirementIcon } from './WallRequirementIcon';
+import { IconicDescription } from './IconicDescription';
 
 interface Props {
   cave: CaveSpace[];
@@ -15,6 +16,7 @@ interface Props {
   accessibleSpaces: string[];
   selectedRoomTile?: RoomTile;
   activatedRoomsThisTurn?: string[];
+  showIconicDescription?: boolean;
   onSpaceClick: (id: string) => void;
   onWallClick?: (wallId: string) => void;
   children?: React.ReactNode;
@@ -31,6 +33,7 @@ export const CaveBoard: React.FC<Props> = ({
   accessibleSpaces, 
   selectedRoomTile,
   activatedRoomsThisTurn = [],
+  showIconicDescription = true,
   onSpaceClick,
   onWallClick,
   children
@@ -101,7 +104,7 @@ export const CaveBoard: React.FC<Props> = ({
 
               <div 
                 onClick={() => isClickable && onSpaceClick(space.id)}
-                className={`w-full h-full rounded-lg flex flex-col items-center justify-center text-center p-2 border-2 transition-all relative
+                className={`w-full h-full rounded-lg flex flex-col items-center justify-center text-center p-0.5 border-2 transition-all relative
                   ${space.state === 'FACE_DOWN' && !isExcavatable ? 'bg-stone-600 border-stone-500 shadow-inner' : ''}
                   ${space.state === 'FACE_DOWN' && isExcavatable ? 'bg-stone-500 border-orange-400 shadow-inner cursor-pointer hover:bg-stone-400 ring-4 ring-orange-400/50 animate-pulse' : ''}
                   ${space.state === 'ENTRANCE' ? 'bg-orange-200 border-orange-400' : ''}
@@ -153,20 +156,36 @@ export const CaveBoard: React.FC<Props> = ({
                 
                 {space.state === 'ENTRANCE' && (
                   <>
-                    <span className="text-orange-800 text-sm font-bold leading-tight">Cave<br/>Entrance</span>
+                    <div className="w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 bg-amber-500 text-white">
+                      <span className="text-[11px] font-bold leading-tight truncate">Cave Entrance</span>
+                    </div>
                     {space.tile?.trigger === 'action' && (
-                      <span className="text-[10px] text-stone-700 leading-tight mt-2 px-1">{space.tile.effectDescription}</span>
+                      <div className="mt-2 px-1">
+                        {showIconicDescription && space.tile.iconicDescription ? (
+                          <IconicDescription description={space.tile.iconicDescription} className="justify-center" />
+                        ) : (
+                          <span className="text-[10px] text-stone-900 leading-tight">{space.tile.effectDescription}</span>
+                        )}
+                      </div>
                     )}
                   </>
                 )}
                 
                 {space.state === 'FURNISHED' && space.tile && (
                   <>
-                    <div className="flex items-center justify-center gap-2 mt-1">
-                      <span className="text-sm font-bold text-stone-800 leading-tight">{space.tile.name}</span>
-                      <WallRequirementIcon req={space.tile.wallRequirement} />
+                    <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${space.tile.color === 'orange' ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
+                      <span className="text-[11px] font-bold leading-tight truncate">{space.tile.name}</span>
                     </div>
-                    <span className="text-[10px] text-stone-700 leading-tight mt-2 px-1">{space.tile.effectDescription}</span>
+                    <div className="flex justify-center w-full bg-stone-200/60 py-0.5 px-1 border-b border-stone-300/30">
+                      <WallRequirementIcon req={space.tile.wallRequirement} className="w-4 h-4" />
+                    </div>
+                    <div className="mt-1 w-full flex justify-center">
+                      {showIconicDescription && space.tile.iconicDescription ? (
+                        <IconicDescription description={space.tile.iconicDescription} className="justify-center" />
+                      ) : (
+                        <span className="text-[10px] text-stone-900 leading-tight">{space.tile.effectDescription}</span>
+                      )}
+                    </div>
                     <span className="absolute bottom-1 right-1 bg-stone-800 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">{space.tile.vp} VP</span>
                   </>
                 )}

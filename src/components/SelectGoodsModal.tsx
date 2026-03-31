@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GoodsState } from '../types/game';
-import { Check, X } from 'lucide-react';
+import { Check, X, TreePine, Wheat, Leaf, Drumstick, Coins } from 'lucide-react';
+import { StoneIcon } from './StoneIcon';
 
 interface Props {
   goods: GoodsState;
@@ -10,6 +11,15 @@ interface Props {
   onConfirm: (selected: Partial<GoodsState>) => void;
   onCancel: () => void;
 }
+
+const goodIcons: Record<string, React.ReactNode> = {
+  wood: <TreePine className="w-4 h-4 text-amber-700" />,
+  stone: <StoneIcon className="w-4 h-4 text-gray-400" />,
+  emmer: <Wheat className="w-4 h-4 text-yellow-500" />,
+  flax: <Leaf className="w-4 h-4 text-green-500" />,
+  food: <Drumstick className="w-4 h-4 text-orange-500" />,
+  gold: <Coins className="w-4 h-4 text-yellow-400" />,
+};
 
 export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDifferent, exclude = [], onConfirm, onCancel }) => {
   const [selected, setSelected] = useState<Partial<GoodsState>>({});
@@ -59,7 +69,10 @@ export const SelectGoodsModal: React.FC<Props> = ({ goods, amount, mustBeDiffere
                       'bg-stone-700 border-stone-600 hover:border-stone-400 text-stone-200'}
                   `}
                 >
-                  <span className="capitalize font-bold">{good}</span>
+                  <div className="flex items-center gap-2">
+                    {goodIcons[good]}
+                    <span className="capitalize font-bold">{good}</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs opacity-70">Owned: {goods[good]}</span>
                     {isSelected && <Check className="w-4 h-4 text-orange-400" />}

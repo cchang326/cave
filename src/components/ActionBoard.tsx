@@ -54,7 +54,7 @@ export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAc
               disabled={isUsed || isActive}
               onClick={() => onTakeAction(action.id)}
               title={action.description}
-              className={`w-32 h-32 p-2 rounded-lg border-2 text-center transition-all flex flex-col items-center justify-center flex-shrink-0 snap-start relative
+              className={`w-32 h-32 p-0.5 rounded-lg border-2 text-center transition-all flex flex-col items-center justify-start flex-shrink-0 snap-start relative
                 ${isUsed 
                   ? 'bg-stone-900 border-stone-800 opacity-40 cursor-not-allowed' 
                   : isActive
@@ -62,8 +62,10 @@ export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAc
                   : 'bg-stone-700 border-stone-500 hover:border-orange-400 hover:bg-stone-600 cursor-pointer shadow-md'
                 }`}
             >
-              <span className="font-bold text-stone-100 text-xs mb-1 leading-tight">{action.name}</span>
-              <div className="text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-4">{action.description}</div>
+              <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${isUsed ? 'bg-stone-950' : isActive ? 'bg-orange-600' : 'bg-stone-900'} text-stone-100`}>
+                <span className="font-bold text-[11px] leading-tight truncate">{action.name}</span>
+              </div>
+              <div className="px-1.5 mt-1 text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-5">{action.description}</div>
               {isUsed && <span className="absolute bottom-1 bg-stone-900/80 px-2 py-0.5 rounded text-red-400 text-[10px] font-bold uppercase tracking-wider">Used</span>}
               {isActive && <span className="absolute bottom-1 bg-orange-600 px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">Active</span>}
             </button>

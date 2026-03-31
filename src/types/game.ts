@@ -25,6 +25,7 @@ export interface RoomTile {
   wallRequirement?: WallRequirement;
   trigger: EffectTrigger;
   effectDescription: string;
+  iconicDescription?: string;
   effectPayload?: any;
 }
 
@@ -82,6 +83,7 @@ export interface UIState {
   hasInteractedWithChecklist?: boolean;
   undoSnapshot?: string;
   showAdditionalCavernChoice?: boolean;
+  showIconicDescription: boolean;
 }
 
 export interface GameState {

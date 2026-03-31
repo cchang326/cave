@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChecklistItem, GoodsState } from '../types/game';
-import { Check, X, Play, ChevronRight, Undo2, Square, CheckSquare, Circle, Info, Drumstick } from 'lucide-react';
+import { Check, X, Play, ChevronRight, Undo2, Square, CheckSquare, Circle, Info, Drumstick, TreePine, Wheat, Leaf, Coins } from 'lucide-react';
+import { StoneIcon } from './StoneIcon';
 
 interface Props {
   checklist: ChecklistItem[];
@@ -13,6 +14,15 @@ interface Props {
   canUndoAction?: boolean;
   onCancel?: () => void;
 }
+
+const goodIcons: Record<string, React.ReactNode> = {
+  wood: <TreePine className="w-2.5 h-2.5 text-amber-700" />,
+  stone: <StoneIcon className="w-2.5 h-2.5 text-gray-400" />,
+  emmer: <Wheat className="w-2.5 h-2.5 text-yellow-500" />,
+  flax: <Leaf className="w-2.5 h-2.5 text-green-500" />,
+  food: <Drumstick className="w-2.5 h-2.5 text-orange-500" />,
+  gold: <Coins className="w-2.5 h-2.5 text-yellow-400" />,
+};
 
 function canAfford(goods: GoodsState, cost?: Partial<GoodsState>, condition?: any): boolean {
   if (cost) {
@@ -97,8 +107,7 @@ export const ChecklistUI: React.FC<Props> = ({
                         {Object.entries(item.data.gainAfter).map(([good, amount]) => (
                           <div key={good} className="flex items-center gap-0.5 bg-stone-900/40 px-1 rounded border border-stone-700/50">
                             <span className="text-orange-400 text-[10px] font-bold">+{amount as number}</span>
-                            {good === 'food' && <Drumstick className="w-2.5 h-2.5 text-orange-500" />}
-                            {good !== 'food' && <span className="text-stone-400 text-[9px] uppercase">{good.charAt(0)}</span>}
+                            {goodIcons[good] || <span className="text-stone-400 text-[9px] uppercase">{good.charAt(0)}</span>}
                           </div>
                         ))}
                       </div>

@@ -80,6 +80,16 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
     }));
   };
 
+  const handleToggleIconicDescription = () => {
+    setGameState(prev => ({
+      ...prev,
+      uiState: {
+        ...prev.uiState,
+        showIconicDescription: !prev.uiState.showIconicDescription
+      }
+    }));
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -116,6 +126,20 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
             </div>
             <div className="text-3xl font-black text-orange-400">{currentScore.totalVP}</div>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
+          <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Iconic Descriptions</span>
+          <button
+            onClick={handleToggleIconicDescription}
+            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+              gameState.uiState.showIconicDescription 
+                ? 'bg-green-600 text-white shadow-inner' 
+                : 'bg-stone-700 text-stone-400'
+            }`}
+          >
+            {gameState.uiState.showIconicDescription ? 'ON' : 'OFF'}
+          </button>
         </div>
 
         <div className="pt-4 border-t border-stone-700 space-y-2">

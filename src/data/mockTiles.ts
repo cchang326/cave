@@ -9,6 +9,7 @@ export const MOCK_TILES: Record<string, RoomTile> = {
     vp: 0,
     trigger: 'action',
     effectDescription: 'Gain either 1 wood or 1 stone or 1 emmer or 1 flax',
+    iconicDescription: '+1 [wood]/[stone]/[emmer]/[flax]',
   }
 };
 
@@ -21,7 +22,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 1, max: 1, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Replenish either wood or stone or emmer or flax to 2.'
+    effectDescription: 'Replenish either wood or stone or emmer or flax to 2.',
+    iconicDescription: '[arrow-up-to-line]2 [wood]/[stone]/[emmer]/[flax]'
   },
   {
     id: 'spinning_wheel',
@@ -31,7 +33,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 4,
     wallRequirement: { min: 1, max: 1, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Pay 1 flax to gain 1 gold OR Pay 3 flax to gain 2 gold'
+    effectDescription: 'Pay 1 flax to gain 1 gold OR Pay 3 flax to gain 2 gold',
+    iconicDescription: '1[flax][arrow-right]+1[gold]\n3[flax][arrow-right]+2[gold]'
   },
   {
     id: 'tunnel',
@@ -41,7 +44,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 2, max: 2, configuration: 'opposing' },
     trigger: 'action',
-    effectDescription: 'Gain 2 food AND/OR If you have less than 3 stone, gain 1 stone'
+    effectDescription: 'Gain 2 food AND/OR If you have less than 3 stone, gain 1 stone',
+    iconicDescription: '+2[food]\n+1[stone] {if < 3 stones}'
   },
   {
     id: 'grindstone',
@@ -51,7 +55,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 4,
     wallRequirement: { min: 1, max: 2, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay 1 emmer to gain 3 food OR Pay 4 emmer to gain 7 food'
+    effectDescription: 'Pay 1 emmer to gain 3 food OR Pay 4 emmer to gain 7 food',
+    iconicDescription: '1[emmer][arrow-right]+3[food]\n4[emmer][arrow-right]+7[food]'
   },
   {
     id: 'food_corner',
@@ -61,7 +66,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 2, max: 2, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Replenish food to 3'
+    effectDescription: 'Replenish food to 3',
+    iconicDescription: '[arrow-up-to-line]3 [food]'
   },
   {
     id: 'parlor',
@@ -71,7 +77,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 6,
     wallRequirement: { min: 3, max: 3, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Gain 1 good of each type of which you have 0 goods.'
+    effectDescription: 'Gain 1 good of each type of which you have 0 goods.',
+    iconicDescription: '+1 {of each}\n[wood][stone][emmer][flax][food][gold]\n{if 0 owned}'
   },
   {
     id: 'warehouse',
@@ -81,7 +88,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 2,
     wallRequirement: { min: 1, max: 3, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay 2 food to gain 1 wood, 1 stone, 1 emmer, and 1 flax'
+    effectDescription: 'Pay 2 food to gain 1 wood, 1 stone, 1 emmer, and 1 flax',
+    iconicDescription: '2[food][arrow-right]\n1[wood]1[stone]1[emmer]1[flax]'
   },
   {
     id: 'stall',
@@ -91,7 +99,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 6,
     wallRequirement: { min: 1, max: 3, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay either 5 emmer or 5 flax to gain 4 gold.'
+    effectDescription: 'Pay either 5 emmer or 5 flax to gain 4 gold.',
+    iconicDescription: '5[emmer]/5[flax][arrow-right]\n4[gold]'
   },
   {
     id: 'sacrificial_altar',
@@ -101,7 +110,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 7,
     wallRequirement: { min: 1, max: 3, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay 1 wood, 1 emmer, 1 flax, and 1 food to gain 3 gold'
+    effectDescription: 'Pay 1 wood, 1 emmer, 1 flax, and 1 food to gain 3 gold',
+    iconicDescription: '1 [wood][emmer][flax][food][arrow-right]\n3[gold]'
   },
   {
     id: 'storeroom',
@@ -111,7 +121,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 6,
     wallRequirement: { min: 2, max: 2, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Gain 1 emmer, 1 flax, and 1 food'
+    effectDescription: 'Gain 1 emmer, 1 flax, and 1 food',
+    iconicDescription: '+1 [emmer][flax][food]'
   },
   {
     id: 'weaving_room',
@@ -121,7 +132,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 5,
     wallRequirement: { min: 2, max: 2, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay 2 flax to gain 2 food and 2 gold'
+    effectDescription: 'Pay 2 flax to gain 2 food and 2 gold',
+    iconicDescription: '2[flax][arrow-right] 2[food]2[gold]'
   },
   {
     id: 'furniture_workshop',
@@ -131,7 +143,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 5,
     wallRequirement: { min: 2, max: 3, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Pay 2 wood and 1 flax to gain 3 gold'
+    effectDescription: 'Pay 2 wood and 1 flax to gain 3 gold',
+    iconicDescription: '2[wood]1[flax][arrow-right]+3[gold]'
   },
   {
     id: 'gold_vein',
@@ -141,7 +154,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 9,
     wallRequirement: { min: 2, max: 3, configuration: 'adjacent' },
     trigger: 'action',
-    effectDescription: 'Gain 1 stone and 1 gold.'
+    effectDescription: 'Gain 1 stone and 1 gold.',
+    iconicDescription: '+1 [stone][gold]'
   },
   {
     id: 'junction_room',
@@ -151,7 +165,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 6,
     wallRequirement: { min: 2, max: 2, configuration: 'opposing' },
     trigger: 'action',
-    effectDescription: 'Pay 3 different goods to gain 2 gold.'
+    effectDescription: 'Pay 3 different goods to gain 2 gold.',
+    iconicDescription: '3 {diff goods} [arrow-right]\n2[gold]'
   },
   {
     id: 'digging_cave',
@@ -161,7 +176,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 8,
     wallRequirement: { min: 3, max: 3, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Pay 1 gold to excavate once'
+    effectDescription: 'Pay 1 gold to excavate once',
+    iconicDescription: '1[gold][arrow-right]+[pickaxe]'
   },
   {
     id: 'bakehouse',
@@ -171,7 +187,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 6,
     wallRequirement: { min: 3, max: 3, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Pay 2 emmer to gain 4 food and 1 gold OR Pay 3 emmer to gain 4 food and 2 gold'
+    effectDescription: 'Pay 2 emmer to gain 4 food and 1 gold OR Pay 3 emmer to gain 4 food and 2 gold',
+    iconicDescription: '2[emmer][arrow-right]4[food]1[gold]\n3[emmer][arrow-right]4[food]2[gold]'
   },
   {
     id: 'state_room',
@@ -181,7 +198,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 12,
     wallRequirement: { min: 3, max: 4, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Gain 1 flax and 1 gold.'
+    effectDescription: 'Gain 1 flax and 1 gold.',
+    iconicDescription: '+1 [flax][gold]'
   },
   {
     id: 'secret_chamber',
@@ -191,7 +209,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 8,
     wallRequirement: { min: 4, max: 4, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'Gain either 3 flax or 1 gold'
+    effectDescription: 'Gain either 3 flax or 1 gold',
+    iconicDescription: '+3[flax] / +1[gold]'
   },
   {
     id: 'treasury',
@@ -201,7 +220,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 10,
     wallRequirement: { min: 4, max: 4, configuration: 'any' },
     trigger: 'action',
-    effectDescription: 'If you have (at least) 3 gold, gain 1 food and 1 gold.'
+    effectDescription: 'If you have (at least) 3 gold, gain 1 food and 1 gold.',
+    iconicDescription: '3[gold]: 1[food]1[gold]'
   },
   {
     id: 'prospecting_site',
@@ -211,7 +231,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 5,
     wallRequirement: { min: 1, max: 2, configuration: 'adjacent' },
     trigger: 'passive',
-    effectDescription: 'Each time you use the "Undergrowth" action tile, you can pay 1 food to gain 1 gold'
+    effectDescription: 'Each time you use the "Undergrowth" action tile, you can pay 1 food to gain 1 gold',
+    iconicDescription: '(Undergrowth):\n1[food][arrow-right]1[gold]'
   },
   {
     id: 'retting_room',
@@ -221,7 +242,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 1, max: 3, configuration: 'adjacent' },
     trigger: 'passive',
-    effectDescription: 'Each time after you gain 1-3 flax from an effect, you get 1 food.'
+    effectDescription: 'Each time after you gain 1-3 flax from an effect, you get 1 food.',
+    iconicDescription: '+1-3[flax]: +1[food]'
   },
   {
     id: 'equipment_room',
@@ -231,7 +253,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 3,
     wallRequirement: { min: 1, max: 2, configuration: 'adjacent' },
     trigger: 'passive',
-    effectDescription: 'Undermining activates up to 3 rooms. Expedition activates up to 4 rooms.'
+    effectDescription: 'Undermining activates up to 3 rooms. Expedition activates up to 4 rooms.',
+    iconicDescription: '(Undermining):[3]\n(Expedition):[4]'
   },
   {
     id: 'wood_storeroom',
@@ -241,7 +264,8 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 2,
     wallRequirement: { min: 2, max: 2, configuration: 'adjacent' },
     trigger: 'passive',
-    effectDescription: 'Each time you use a [1] effect, also gain 1 wood, if possible.'
+    effectDescription: 'Each time you use a [1] effect, also gain 1 wood, if possible.',
+    iconicDescription: '[1]:1[wood]'
   },
   {
     id: 'dungeon',
@@ -251,6 +275,7 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     vp: 11,
     wallRequirement: { min: 4, max: 4, configuration: 'any' },
     trigger: 'passive',
-    effectDescription: 'Each time you build a wall, also gain 2 gold.'
+    effectDescription: 'Each time you build a wall, also gain 2 gold.',
+    iconicDescription: '(Build a wall):2[gold]'
   }
 ];
