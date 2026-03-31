@@ -107,7 +107,7 @@ export const CaveBoard: React.FC<Props> = ({
                 className={`w-full h-full rounded-lg flex flex-col items-center justify-center text-center p-0.5 border-2 transition-all relative
                   ${space.state === 'FACE_DOWN' && !isExcavatable ? 'bg-stone-600 border-stone-500 shadow-inner' : ''}
                   ${space.state === 'FACE_DOWN' && isExcavatable ? 'bg-stone-500 border-orange-400 shadow-inner cursor-pointer hover:bg-stone-400 ring-4 ring-orange-400/50 animate-pulse' : ''}
-                  ${space.state === 'ENTRANCE' ? 'bg-orange-200 border-orange-400' : ''}
+                  ${space.state === 'ENTRANCE' ? 'bg-orange-200 border-orange-400 justify-start' : ''}
                   ${space.state === 'FURNISHED' && space.tile?.color === 'orange' ? 'bg-orange-100 border-orange-400 justify-start' : ''}
                   ${space.state === 'FURNISHED' && space.tile?.color === 'blue' ? 'bg-blue-100 border-blue-400 justify-start' : ''}
                   ${space.state === 'CROSSED_PICKAXES' && !isFurnishable ? 'bg-stone-800 border-stone-900' : ''}
@@ -160,7 +160,7 @@ export const CaveBoard: React.FC<Props> = ({
                       <span className="text-[11px] font-bold leading-tight truncate">Cave Entrance</span>
                     </div>
                     {space.tile?.trigger === 'action' && (
-                      <div className="mt-2">
+                      <div className="flex-1 w-full flex flex-col justify-center items-center pb-1">
                         {showIconicDescription && space.tile.iconicDescription ? (
                           <IconicDescription description={space.tile.iconicDescription} className="justify-center" />
                         ) : (
