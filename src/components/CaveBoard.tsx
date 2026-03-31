@@ -1,6 +1,6 @@
 import React from 'react';
 import { CaveSpace, RoomTile } from '../types/game';
-import { Pickaxe, Ban, Drumstick } from 'lucide-react';
+import { Pickaxe, Ban, Drumstick, Shield } from 'lucide-react';
 import { isValidRoomPlacement } from '../utils/walls';
 import { WallRequirementIcon } from './WallRequirementIcon';
 import { IconicDescription } from './IconicDescription';
@@ -160,11 +160,11 @@ export const CaveBoard: React.FC<Props> = ({
                       <span className="text-[11px] font-bold leading-tight truncate">Cave Entrance</span>
                     </div>
                     {space.tile?.trigger === 'action' && (
-                      <div className="mt-2 px-1">
+                      <div className="mt-2">
                         {showIconicDescription && space.tile.iconicDescription ? (
                           <IconicDescription description={space.tile.iconicDescription} className="justify-center" />
                         ) : (
-                          <span className="text-[10px] text-stone-900 leading-tight">{space.tile.effectDescription}</span>
+                          <span className="text-[10px] text-stone-900 leading-tight px-1">{space.tile.effectDescription}</span>
                         )}
                       </div>
                     )}
@@ -173,20 +173,25 @@ export const CaveBoard: React.FC<Props> = ({
                 
                 {space.state === 'FURNISHED' && space.tile && (
                   <>
-                    <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${space.tile.color === 'orange' ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
-                      <span className="text-[11px] font-bold leading-tight truncate">{space.tile.name}</span>
+                    <div className={`relative w-full py-1.5 px-1 rounded-t-md flex items-center justify-start -mt-0.5 -mx-0.5 ${space.tile.color === 'orange' ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
+                      <span className={`${['Furniture Workshop', 'Prospecting Site', 'Equipment Room', 'Wood Storeroom'].includes(space.tile.name) ? 'text-[9.5px]' : 'text-[11px]'} font-bold leading-tight truncate pl-1 pr-6`}>
+                        {space.tile.name}
+                      </span>
+                      <div className="absolute right-1 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-white/40 fill-amber-400" />
+                        <span className="absolute text-stone-900 text-[9px] font-bold pb-0.5">{space.tile.vp}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-center w-full bg-stone-200/60 py-0.5 px-1 border-b border-stone-300/30">
+                    <div className="flex justify-center w-full bg-stone-300/80 py-0.5 px-1 border-b border-stone-400/30">
                       <WallRequirementIcon req={space.tile.wallRequirement} className="w-4 h-4" />
                     </div>
-                    <div className="mt-1 w-full flex justify-center">
+                    <div className="flex-1 w-full flex flex-col justify-center items-center pb-1">
                       {showIconicDescription && space.tile.iconicDescription ? (
                         <IconicDescription description={space.tile.iconicDescription} className="justify-center" />
                       ) : (
-                        <span className="text-[10px] text-stone-900 leading-tight">{space.tile.effectDescription}</span>
+                        <span className="text-[10px] text-stone-900 leading-tight text-center px-1">{space.tile.effectDescription}</span>
                       )}
                     </div>
-                    <span className="absolute bottom-1 right-1 bg-stone-800 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">{space.tile.vp} VP</span>
                   </>
                 )}
               </div>

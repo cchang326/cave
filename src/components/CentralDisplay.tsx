@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { RoomTile } from '../types/game';
 import { WallRequirementIcon } from './WallRequirementIcon';
 import { IconicDescription } from './IconicDescription';
-import { TreePine, Wheat, Leaf, Drumstick, Coins } from 'lucide-react';
+import { TreePine, Wheat, Leaf, Drumstick, Coins, Shield } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
 
 interface Props {
@@ -96,26 +96,31 @@ export const CentralDisplay: React.FC<Props> = ({
                   Selected
                 </div>
               )}
-              <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${tile.color === 'orange' ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
-                <span className="text-[11px] font-bold leading-tight truncate">{tile.name}</span>
+              <div className={`relative w-full py-1.5 px-1 rounded-t-md flex items-center justify-start -mt-0.5 -mx-0.5 ${tile.color === 'orange' ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
+                <span className={`${['Furniture Workshop', 'Prospecting Site', 'Equipment Room', 'Wood Storeroom'].includes(tile.name) ? 'text-[9.5px]' : 'text-[11px]'} font-bold leading-tight truncate pl-1 pr-6`}>
+                  {tile.name}
+                </span>
+                <div className="absolute right-1 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white/40 fill-amber-400" />
+                  <span className="absolute text-stone-900 text-[9px] font-bold pb-0.5">{tile.vp}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-1.5 w-full bg-stone-200/60 py-0.5 px-1 border-b border-stone-300/30">
+              <div className="flex items-center justify-center gap-1.5 w-full bg-stone-300/80 py-0.5 px-1 border-b border-stone-400/30">
                 {Object.keys(tile.cost).length > 0 && (
-                  <div className="text-[10px] font-bold text-stone-800 flex items-center gap-1">
-                    <span className="text-[8px] uppercase tracking-tighter opacity-70">Cost:</span>
+                  <div className="text-[10px] font-bold text-stone-900 flex items-center gap-1">
+                    <span className="text-[8px] uppercase tracking-tighter opacity-80">Cost:</span>
                     {renderCost(tile.cost)}
                   </div>
                 )}
                 <WallRequirementIcon req={tile.wallRequirement} className="w-4 h-4" />
               </div>
-              <div className="mt-1 w-full flex justify-center">
+              <div className="flex-1 w-full flex flex-col justify-center items-center pb-1">
                 {showIconicDescription && tile.iconicDescription ? (
                   <IconicDescription description={tile.iconicDescription} className="justify-center" />
                 ) : (
-                  <div className="text-[10px] text-stone-900 leading-tight line-clamp-3">{tile.effectDescription}</div>
+                  <div className="text-[10px] text-stone-900 leading-tight line-clamp-3 text-center px-1">{tile.effectDescription}</div>
                 )}
               </div>
-              <span className="absolute bottom-1 right-1 bg-stone-800 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">{tile.vp} VP</span>
             </div>
           );
         })}

@@ -23,7 +23,7 @@ export const MOCK_ROOM_TILES: RoomTile[] = [
     wallRequirement: { min: 1, max: 1, configuration: 'any' },
     trigger: 'action',
     effectDescription: 'Replenish either wood or stone or emmer or flax to 2.',
-    iconicDescription: '[arrow-up-to-line]2 [wood]/[stone]/[emmer]/[flax]'
+    iconicDescription: '[arrow-up-to-line]2[wood]/[stone]/[emmer]/[flax]'
   },
   {
     id: 'spinning_wheel',
