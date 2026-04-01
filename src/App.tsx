@@ -8,6 +8,9 @@ import { ActionBoard } from './components/ActionBoard';
 import { CentralDisplay } from './components/CentralDisplay';
 import { ChecklistUI } from './components/ChecklistUI';
 import { ScoreSummary } from './components/ScoreSummary';
+import { auth, signInWithGoogle, logout } from './firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { LogIn, LogOut, User as UserIcon, Trophy, History } from 'lucide-react';
 import { DebugPanel, DebugState } from './components/DebugPanel';
 import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { AdditionalCavernModal } from './components/AdditionalCavernModal';
@@ -30,18 +33,55 @@ function canAfford(goods: GoodsState, cost?: Partial<GoodsState>, condition?: an
   return true;
 }
 
-function getAccessibleSpaces(cave: CaveSpace[]): string[] {
-  const openSpaces = cave.filter(c => ['ENTRANCE', 'EMPTY', 'FURNISHED', 'CROSSED_PICKAXES'].includes(c.state));
-  const accessibleIds: string[] = [];
+function hasWallBetween(r1: number, c1: number, r2: number, c2: number, walls: string[]): boolean {
+  const wallId = `${Math.min(r1, r2)},${Math.min(c1, c2)}-${Math.max(r1, r2)},${Math.max(c1, c2)}`;
+  return walls.includes(wallId);
+}
 
+function getAccessibleSpaces(cave: CaveSpace[], walls: string[], isUndermining: boolean): string[] {
+  const entrance = cave.find(c => c.state === 'ENTRANCE');
+  if (!entrance) return [];
+
+  const reachableOpenSpaces = new Set<string>();
+  const queue: CaveSpace[] = [entrance];
+  reachableOpenSpaces.add(entrance.id);
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const neighbors = cave.filter(c => {
+      const dx = Math.abs(c.col - current.col);
+      const dy = Math.abs(c.row - current.row);
+      return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+    });
+
+    for (const neighbor of neighbors) {
+      if (reachableOpenSpaces.has(neighbor.id)) continue;
+      
+      if (['ENTRANCE', 'EMPTY', 'FURNISHED', 'CROSSED_PICKAXES'].includes(neighbor.state)) {
+        if (isUndermining || !hasWallBetween(current.row, current.col, neighbor.row, neighbor.col, walls)) {
+          reachableOpenSpaces.add(neighbor.id);
+          queue.push(neighbor);
+        }
+      }
+    }
+  }
+
+  const accessibleIds: string[] = [];
   for (const space of cave) {
     if (space.state === 'FACE_DOWN') {
-      const isAdjacent = openSpaces.some(open => {
-        const dx = Math.abs(open.col - space.col);
-        const dy = Math.abs(open.row - space.row);
+      const neighbors = cave.filter(c => {
+        const dx = Math.abs(c.col - space.col);
+        const dy = Math.abs(c.row - space.row);
         return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
       });
-      if (isAdjacent) {
+
+      const isAccessible = neighbors.some(open => {
+        if (!reachableOpenSpaces.has(open.id)) return false;
+        if (!isUndermining && hasWallBetween(space.row, space.col, open.row, open.col, walls)) return false;
+        return true;
+      });
+
+      if (isAccessible) {
         accessibleIds.push(space.id);
       }
     }
@@ -153,7 +193,15 @@ function initializeGame(): GameState {
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(initializeGame());
   const [debugState, setDebugState] = useState<DebugState>({});
+  const [user, setUser] = useState<User | null>(null);
   const autoExecutedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (gameState.uiState.checklist.length === 0) {
@@ -231,7 +279,8 @@ export default function App() {
           return next;
         }
       } else if (item.actionType === 'EXCAVATE') {
-        const accessible = getAccessibleSpaces(next.cave);
+        const isUndermining = next.uiState.activeActionTile === 'undermining';
+        const accessible = getAccessibleSpaces(next.cave, next.walls, isUndermining);
         if (accessible.length === 0) {
           alert("No accessible spaces to excavate!");
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
@@ -582,7 +631,8 @@ export default function App() {
       if (prev.uiState.mode === 'EXCAVATE') {
         if (prev.uiState.excavationsLeft <= 0) return prev;
 
-        const accessible = getAccessibleSpaces(prev.cave);
+        const isUndermining = prev.uiState.activeActionTile === 'undermining';
+        const accessible = getAccessibleSpaces(prev.cave, prev.walls, isUndermining);
         if (!accessible.includes(spaceId)) return prev;
 
         const spaceIndex = prev.cave.findIndex(s => s.id === spaceId);
@@ -836,7 +886,7 @@ export default function App() {
     });
   };
 
-  const accessibleSpaces = gameState.uiState.mode === 'EXCAVATE' ? getAccessibleSpaces(gameState.cave) : [];
+  const accessibleSpaces = gameState.uiState.mode === 'EXCAVATE' ? getAccessibleSpaces(gameState.cave, gameState.walls, gameState.uiState.activeActionTile === 'undermining') : [];
 
   const handleUndoAction = () => {
     if (gameState.uiState.undoSnapshot) {
@@ -911,6 +961,8 @@ export default function App() {
     ? gameState.centralDisplay.find(r => r.id === gameState.uiState.selectedRoomId) 
     : undefined;
 
+  const isGameOver = gameState.actionBoard.futureActions.length === 0 && gameState.actionBoard.turn > gameState.actionBoard.maxTurns;
+
   return (
     <div className="min-h-screen bg-stone-900 text-stone-100 p-4 md:p-8 font-sans flex flex-col">
       <div className="max-w-[1400px] mx-auto w-full space-y-6 flex-1 flex flex-col">
@@ -918,6 +970,15 @@ export default function App() {
           <ScoreSummary 
             gameState={gameState} 
             onPlayAgain={() => setGameState(initializeGame())} 
+            onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'IDLE' } }))}
+          />
+        )}
+        {gameState.uiState.mode === 'LEADERBOARD' && (
+          <ScoreSummary 
+            gameState={gameState} 
+            onPlayAgain={() => {}} 
+            onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'IDLE' } }))}
+            viewOnly={true}
           />
         )}
         {gameState.uiState.mode === 'PAY_DYNAMIC' && (
@@ -973,6 +1034,50 @@ export default function App() {
             >
               Restart Game
             </button>
+
+            {isGameOver ? (
+              <button 
+                onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'GAME_OVER' } }))}
+                className="text-sm bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded border border-orange-500 transition-colors font-bold"
+              >
+                Show Final Score
+              </button>
+            ) : (
+              <button 
+                onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'LEADERBOARD' } }))}
+                className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
+              >
+                <History className="w-4 h-4 text-orange-400" />
+                Game History
+              </button>
+            )}
+            
+            {user ? (
+              <div className="flex items-center gap-2 bg-stone-800 p-1.5 rounded-full border border-stone-700">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || ''} className="w-7 h-7 rounded-full" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-7 h-7 bg-stone-700 rounded-full flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-stone-400" />
+                  </div>
+                )}
+                <button 
+                  onClick={logout}
+                  className="text-stone-400 hover:text-red-400 transition-colors pr-1"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={signInWithGoogle}
+                className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </button>
+            )}
           </div>
         </header>
 

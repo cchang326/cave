@@ -70,7 +70,7 @@ export interface ChecklistItem {
 }
 
 export interface UIState {
-  mode: 'IDLE' | 'EXCAVATE' | 'FURNISH_SELECT_ROOM' | 'FURNISH_SELECT_SPACE' | 'ROOM_ACTION' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC' | 'RESOLVING_TURN' | 'GAME_OVER';
+  mode: 'IDLE' | 'EXCAVATE' | 'FURNISH_SELECT_ROOM' | 'FURNISH_SELECT_SPACE' | 'ROOM_ACTION' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC' | 'RESOLVING_TURN' | 'GAME_OVER' | 'LEADERBOARD';
   excavationsLeft: number;
   furnishingsLeft: number;
   roomActionsLeft: number;

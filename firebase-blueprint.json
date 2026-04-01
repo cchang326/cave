@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "GameLog": {
+      "title": "Game Log",
+      "description": "A detailed log of a single game, including the final score and game state.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique ID of the player." },
+        "score": { "type": "integer", "description": "The final score achieved." },
+        "gameState": { "type": "object", "description": "The final state of the game." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the game was completed." }
+      },
+      "required": ["userId", "score", "gameState", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/game_logs/{logId}": {
+      "schema": "GameLog",
+      "description": "Personal game history for users."
+    }
+  }
+}

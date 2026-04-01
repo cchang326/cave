@@ -97,10 +97,10 @@ export const CaveBoard: React.FC<Props> = ({
               style={{ gridRow: space.row + 1, gridColumn: space.col + 1 }}
             >
               {/* Perimeter Walls */}
-              {isTopPerimeter && <div className="absolute -top-3 left-0 right-0 h-2 bg-stone-900 rounded-full shadow-md z-10" />}
-              {isBottomPerimeter && <div className="absolute -bottom-3 left-0 right-0 h-2 bg-stone-900 rounded-full shadow-md z-10" />}
-              {isLeftPerimeter && <div className="absolute -left-3 top-0 bottom-0 w-2 bg-stone-900 rounded-full shadow-md z-10" />}
-              {isRightPerimeter && <div className="absolute -right-3 top-0 bottom-0 w-2 bg-stone-900 rounded-full shadow-md z-10" />}
+              {isTopPerimeter && <div className="absolute -top-2 left-0 right-0 h-2 bg-stone-950 rounded-full shadow-md z-20" />}
+              {isBottomPerimeter && <div className="absolute -bottom-2 left-0 right-0 h-2 bg-stone-950 rounded-full shadow-md z-20" />}
+              {isLeftPerimeter && <div className="absolute -left-2 top-0 bottom-0 w-2 bg-stone-950 rounded-full shadow-md z-20" />}
+              {isRightPerimeter && <div className="absolute -right-2 top-0 bottom-0 w-2 bg-stone-950 rounded-full shadow-md z-20" />}
 
               <div 
                 onClick={() => isClickable && onSpaceClick(space.id)}
@@ -203,9 +203,9 @@ export const CaveBoard: React.FC<Props> = ({
                     if (isBuildingWall && !hasRightWall) onWallClick?.(rightWallId);
                     if (isRemovingWall && hasRightWall) onWallClick?.(rightWallId);
                   }}
-                  className={`absolute -right-3 top-0 bottom-0 w-2 z-10 rounded-full transition-all
-                    ${hasRightWall && !isRemovingWall ? 'bg-orange-800 shadow-md' : ''}
-                    ${hasRightWall && isRemovingWall ? 'bg-orange-800 shadow-md hover:bg-red-500 cursor-pointer animate-pulse' : ''}
+                  className={`absolute -right-2 top-0 bottom-0 w-2 z-20 rounded-full transition-all
+                    ${hasRightWall && !isRemovingWall ? 'bg-stone-950 shadow-md' : ''}
+                    ${hasRightWall && isRemovingWall ? 'bg-stone-950 shadow-md hover:bg-red-500 cursor-pointer animate-pulse' : ''}
                     ${!hasRightWall && isBuildingWall ? 'bg-orange-400/30 hover:bg-orange-400/60 cursor-pointer animate-pulse' : ''}
                     ${!hasRightWall && !isBuildingWall ? 'hidden' : ''}
                   `}
@@ -219,9 +219,9 @@ export const CaveBoard: React.FC<Props> = ({
                     if (isBuildingWall && !hasBottomWall) onWallClick?.(bottomWallId);
                     if (isRemovingWall && hasBottomWall) onWallClick?.(bottomWallId);
                   }}
-                  className={`absolute -bottom-3 left-0 right-0 h-2 z-10 rounded-full transition-all
-                    ${hasBottomWall && !isRemovingWall ? 'bg-orange-800 shadow-md' : ''}
-                    ${hasBottomWall && isRemovingWall ? 'bg-orange-800 shadow-md hover:bg-red-500 cursor-pointer animate-pulse' : ''}
+                  className={`absolute -bottom-2 left-0 right-0 h-2 z-20 rounded-full transition-all
+                    ${hasBottomWall && !isRemovingWall ? 'bg-stone-950 shadow-md' : ''}
+                    ${hasBottomWall && isRemovingWall ? 'bg-stone-950 shadow-md hover:bg-red-500 cursor-pointer animate-pulse' : ''}
                     ${!hasBottomWall && isBuildingWall ? 'bg-orange-400/30 hover:bg-orange-400/60 cursor-pointer animate-pulse' : ''}
                     ${!hasBottomWall && !isBuildingWall ? 'hidden' : ''}
                   `}
