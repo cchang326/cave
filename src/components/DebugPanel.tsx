@@ -90,6 +90,20 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
     }));
   };
 
+  const handleRevealAllActionTiles = () => {
+    setGameState(prev => ({
+      ...prev,
+      actionBoard: {
+        ...prev.actionBoard,
+        availableActions: [
+          ...prev.actionBoard.availableActions,
+          ...prev.actionBoard.futureActions,
+        ],
+        futureActions: [],
+      }
+    }));
+  };
+
   if (!isOpen) {
     return (
       <button
@@ -143,6 +157,12 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
         </div>
 
         <div className="pt-4 border-t border-stone-700 space-y-2">
+          <button
+            onClick={handleRevealAllActionTiles}
+            className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
+          >
+            Reveal Action Tiles
+          </button>
           <button
             onClick={handleMaxOutResources}
             className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
