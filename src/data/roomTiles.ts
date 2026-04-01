@@ -34,7 +34,7 @@ export const ROOM_TILES: RoomTile[] = [
     wallRequirement: { min: 1, max: 1, configuration: 'any' },
     trigger: 'action',
     effectDescription: 'Pay 1 flax to gain 1 gold OR Pay 3 flax to gain 2 gold',
-    iconicDescription: '1[flax][arrow-right]+1[gold]\n3[flax][arrow-right]+2[gold]'
+    iconicDescription: '1[flax][arrow-right]+1[gold]\n {or} \n3[flax][arrow-right]+2[gold]'
   },
   {
     id: 'tunnel',
@@ -56,7 +56,7 @@ export const ROOM_TILES: RoomTile[] = [
     wallRequirement: { min: 1, max: 2, configuration: 'adjacent' },
     trigger: 'action',
     effectDescription: 'Pay 1 emmer to gain 3 food OR Pay 4 emmer to gain 7 food',
-    iconicDescription: '1[emmer][arrow-right]+3[food]\n4[emmer][arrow-right]+7[food]'
+    iconicDescription: '1[emmer][arrow-right]+3[food]\n {or} \n4[emmer][arrow-right]+7[food]'
   },
   {
     id: 'food_corner',
@@ -188,7 +188,7 @@ export const ROOM_TILES: RoomTile[] = [
     wallRequirement: { min: 3, max: 3, configuration: 'any' },
     trigger: 'action',
     effectDescription: 'Pay 2 emmer to gain 4 food and 1 gold OR Pay 3 emmer to gain 4 food and 2 gold',
-    iconicDescription: '2[emmer][arrow-right]4[food]1[gold]\n3[emmer][arrow-right]4[food]2[gold]'
+    iconicDescription: '2[emmer][arrow-right]4[food]1[gold]\n{or}\n3[emmer][arrow-right]4[food]2[gold]'
   },
   {
     id: 'state_room',
