@@ -1,13 +1,20 @@
 import React from 'react';
 import { ActionBoardState } from '../types/game';
+import { IconicDescription } from './IconicDescription';
 
 interface Props {
   board: ActionBoardState;
   activeActionTile?: string;
+  showIconicDescription?: boolean;
   onTakeAction: (actionId: string) => void;
 }
 
-export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAction }) => {
+export const ActionBoard: React.FC<Props> = ({ 
+  board, 
+  activeActionTile, 
+  showIconicDescription = true, 
+  onTakeAction 
+}) => {
   return (
     <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700">
       <div className="flex justify-between items-center mb-3">
@@ -56,17 +63,28 @@ export const ActionBoard: React.FC<Props> = ({ board, activeActionTile, onTakeAc
               title={action.description}
               className={`w-32 h-32 p-0.5 rounded-lg border-2 text-center transition-all flex flex-col items-center justify-start flex-shrink-0 snap-start relative
                 ${isUsed 
-                  ? 'bg-stone-900 border-stone-800 opacity-40 cursor-not-allowed' 
+                  ? 'bg-stone-300 border-stone-400 opacity-60 cursor-not-allowed' 
                   : isActive
-                  ? 'bg-orange-900/40 border-orange-500 ring-4 ring-orange-500/30 cursor-default'
-                  : 'bg-stone-700 border-stone-500 hover:border-orange-400 hover:bg-stone-600 cursor-pointer shadow-md'
+                  ? 'bg-orange-100 border-orange-500 ring-4 ring-orange-500/30 cursor-default'
+                  : 'bg-stone-200 border-stone-400 hover:border-orange-400 hover:bg-stone-50 cursor-pointer shadow-md'
                 }`}
             >
-              <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${isUsed ? 'bg-stone-950' : isActive ? 'bg-orange-600' : 'bg-stone-900'} text-stone-100`}>
+              <div className={`w-full py-1.5 px-1 rounded-t-md flex items-center justify-center -mt-0.5 -mx-0.5 ${isUsed ? 'bg-stone-500' : isActive ? 'bg-orange-600' : 'bg-stone-800'} text-stone-100`}>
                 <span className="font-bold text-[11px] leading-tight truncate">{action.name}</span>
               </div>
-              <div className="px-1.5 mt-1 text-[9px] text-stone-400 leading-tight overflow-hidden text-ellipsis line-clamp-5">{action.description}</div>
-              {isUsed && <span className="absolute bottom-1 bg-stone-900/80 px-2 py-0.5 rounded text-red-400 text-[10px] font-bold uppercase tracking-wider">Used</span>}
+              <div className="flex-1 w-full flex flex-col justify-center items-center px-1.5 pb-1">
+                {showIconicDescription && action.iconicDescription ? (
+                  <IconicDescription 
+                    description={action.iconicDescription.replace(/\?/g, board.maxTurns.toString())} 
+                    className="justify-center" 
+                  />
+                ) : (
+                  <div className={`text-[9px] ${isUsed ? 'text-stone-500' : 'text-stone-700'} font-medium leading-tight overflow-hidden text-ellipsis line-clamp-5`}>
+                    {action.description.replace('the number of turns this round', board.maxTurns.toString())}
+                  </div>
+                )}
+              </div>
+              {isUsed && <span className="absolute bottom-1 bg-stone-800/80 px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase tracking-wider">Used</span>}
               {isActive && <span className="absolute bottom-1 bg-orange-600 px-2 py-0.5 rounded text-white text-[10px] font-bold uppercase tracking-wider animate-pulse">Active</span>}
             </button>
           );

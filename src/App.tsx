@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GameState, CaveSpace, ActionBoardState, ChecklistItem, GoodsState } from './types/game';
-import { MOCK_TILES, MOCK_ROOM_TILES } from './data/mockTiles';
+import { ROOM_TILES_MAP, ROOM_TILES } from './data/roomTiles';
 import { setupSoloActionBoard } from './data/actionTiles';
 import { GoodsTrack } from './components/GoodsTrack';
 import { CaveBoard } from './components/CaveBoard';
@@ -71,12 +71,12 @@ function subtractGoods(current: GameState['goods'], costs: Partial<GameState['go
 function initializeGame(): GameState {
   // 3 out of the 6 unexcavatable rooms (tile 1-6) are randomly selected and removed from the game.
   // The remaining 3 are placed in the central display during initial setup.
-  const unexcavatable = MOCK_ROOM_TILES.slice(0, 6);
+  const unexcavatable = ROOM_TILES.slice(0, 6);
   const shuffledUnexcavatable = [...unexcavatable].sort(() => Math.random() - 0.5);
   const removedUnexcavatable = shuffledUnexcavatable.slice(0, 3);
   const displayUnexcavatable = shuffledUnexcavatable.slice(3, 6);
   
-  const otherTiles = MOCK_ROOM_TILES.slice(6);
+  const otherTiles = ROOM_TILES.slice(6);
   const shuffledOther = [...otherTiles].sort(() => Math.random() - 0.5);
 
   const initialCave: CaveSpace[] = [];
@@ -89,7 +89,7 @@ function initializeGame(): GameState {
 
       if (row === 3 && col === 0) {
         state = 'ENTRANCE';
-        tile = MOCK_TILES.caveEntrance;
+        tile = ROOM_TILES_MAP.caveEntrance;
       } else if (row === 2 && col === 0) {
         state = 'CROSSED_PICKAXES';
       } else {
@@ -983,6 +983,7 @@ export default function App() {
               <ActionBoard 
                 board={gameState.actionBoard} 
                 activeActionTile={gameState.uiState.activeActionTile}
+                showIconicDescription={gameState.uiState.showIconicDescription}
                 onTakeAction={handleTakeAction} 
               />
             </div>

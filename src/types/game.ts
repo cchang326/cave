@@ -45,6 +45,7 @@ export interface ActionTile {
   name: string;
   stage: 0 | 2 | 3 | 4;
   description: string;
+  iconicDescription?: string;
 }
 
 export interface ActionBoardState {

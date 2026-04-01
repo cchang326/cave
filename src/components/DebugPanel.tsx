@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Settings, X, Trophy } from 'lucide-react';
 import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
-import { MOCK_ROOM_TILES } from '../data/mockTiles';
+import { ROOM_TILES } from '../data/roomTiles';
 
 export interface DebugState {
   // No state needed for now, but keeping the interface for consistency
@@ -58,8 +58,8 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
       );
 
       // 3. Central display should have its current tiles + hidden tiles from cave + all tiles from deck
-      // We filter by MOCK_ROOM_TILES to ensure we have all possible tiles that are NOT in the cave
-      const newCentralDisplay = MOCK_ROOM_TILES.filter(tile => !tilesInCave.has(tile.id));
+      // We filter by ROOM_TILES to ensure we have all possible tiles that are NOT in the cave
+      const newCentralDisplay = ROOM_TILES.filter(tile => !tilesInCave.has(tile.id));
 
       return {
         ...prev,
