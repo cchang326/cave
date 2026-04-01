@@ -6,6 +6,7 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string", "description": "The unique ID of the player." },
+        "gameId": { "type": "string", "description": "The unique ID of the game session." },
         "score": { "type": "integer", "description": "The final score achieved." },
         "gameState": { "type": "object", "description": "The final state of the game." },
         "timestamp": { "type": "string", "format": "date-time", "description": "When the game was completed." }

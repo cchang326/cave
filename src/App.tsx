@@ -186,7 +186,8 @@ function initializeGame(): GameState {
       activatedRoomsThisTurn: [],
       showIconicDescription: true
     },
-    conversionHistory: []
+    conversionHistory: [],
+    gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   };
 }
 
@@ -1048,7 +1049,7 @@ export default function App() {
                 className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
               >
                 <History className="w-4 h-4 text-orange-400" />
-                Game History
+                High Scores
               </button>
             )}
             

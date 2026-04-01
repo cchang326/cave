@@ -97,4 +97,5 @@ export interface GameState {
   uiState: UIState;
   hasAdditionalCavern: boolean;
   conversionHistory: (keyof GoodsState)[];
+  gameId: string;
 }
