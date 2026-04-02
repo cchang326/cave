@@ -4,18 +4,18 @@ import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
 import { ROOM_TILES } from '../data/roomTiles';
 
-export interface DebugState {
+export interface SettingsState {
   // No state needed for now, but keeping the interface for consistency
 }
 
 interface Props {
-  debugState: DebugState;
-  setDebugState: React.Dispatch<React.SetStateAction<DebugState>>;
+  settingsState: SettingsState;
+  setSettingsState: React.Dispatch<React.SetStateAction<SettingsState>>;
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
 }
 
-export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameState, setGameState }) => {
+export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState, gameState, setGameState }) => {
   const [isOpen, setIsOpen] = useState(false);
   
   const currentScore = calculateScore(gameState);
@@ -100,6 +100,7 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
           ...prev.actionBoard.futureActions,
         ],
         futureActions: [],
+        totalRounds: prev.actionBoard.totalRounds
       }
     }));
   };
@@ -109,7 +110,7 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 bg-stone-800 p-3 rounded-full border border-stone-600 shadow-lg hover:bg-stone-700 transition-colors z-50 group"
-        title="Open Debug Panel"
+        title="Open Settings"
       >
         <Settings className="w-6 h-6 text-stone-400 group-hover:text-stone-200 transition-colors" />
       </button>
@@ -120,7 +121,7 @@ export const DebugPanel: React.FC<Props> = ({ debugState, setDebugState, gameSta
     <div className="fixed bottom-6 right-6 w-80 bg-stone-800 rounded-xl shadow-2xl border border-stone-600 z-50 overflow-hidden flex flex-col">
       <div className="flex justify-between items-center p-4 border-b border-stone-700 bg-stone-900/80">
         <h3 className="font-bold text-stone-200 flex items-center gap-2">
-          <Settings className="w-4 h-4 text-orange-500" /> Debug Panel
+          <Settings className="w-4 h-4 text-orange-500" /> Settings
         </h3>
         <button onClick={() => setIsOpen(false)} className="text-stone-400 hover:text-white transition-colors">
           <X className="w-5 h-5" />

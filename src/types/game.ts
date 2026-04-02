@@ -55,6 +55,7 @@ export interface ActionBoardState {
   availableActions: ActionTile[];
   futureActions: ActionTile[];
   usedActionsThisRound: string[];
+  totalRounds: number;
 }
 
 export type ChecklistActionType = 'EXCAVATE' | 'FURNISH' | 'ROOM_ACTION' | 'GAIN' | 'PAY' | 'CHOICE' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC';
@@ -85,6 +86,7 @@ export interface UIState {
   undoSnapshot?: string;
   showAdditionalCavernChoice?: boolean;
   showIconicDescription: boolean;
+  showScoreSummary: boolean;
 }
 
 export interface GameState {

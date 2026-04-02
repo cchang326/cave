@@ -64,7 +64,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
   }, [auth.currentUser]);
 
   const saveScore = async () => {
-    if (!auth.currentUser || hasSaved || isSaving || viewOnly) return;
+    if (!auth.currentUser || hasSaved || isSaving || gameState.uiState.mode !== 'GAME_OVER') return;
 
     setIsSaving(true);
     try {
@@ -103,10 +103,10 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
   };
 
   useEffect(() => {
-    if (auth.currentUser && !hasSaved) {
+    if (auth.currentUser && !hasSaved && gameState.uiState.mode === 'GAME_OVER') {
       saveScore();
     }
-  }, [auth.currentUser]);
+  }, [auth.currentUser, gameState.uiState.mode]);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Just now';
@@ -122,8 +122,8 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
             <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/50">
               <Trophy className="w-8 h-8 text-orange-400" />
             </div>
-            <h2 className="text-3xl font-bold text-stone-100">{viewOnly ? 'Current Standing' : 'Game Over'}</h2>
-            <p className="text-stone-400 mt-2">{viewOnly ? 'Your progress so far' : 'Final Score Breakdown'}</p>
+            <h2 className="text-3xl font-bold text-stone-100">{gameState.uiState.mode === 'GAME_OVER' ? 'Game Over' : 'Current Standing'}</h2>
+            <p className="text-stone-400 mt-2">{gameState.uiState.mode === 'GAME_OVER' ? 'Final Score Breakdown' : 'Your progress so far'}</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -169,7 +169,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
           </div>
 
           <div className="flex flex-col gap-3">
-            {!viewOnly && (
+            {gameState.uiState.mode === 'GAME_OVER' && (
               <button
                 onClick={onPlayAgain}
                 className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors shadow-lg"
@@ -180,12 +180,12 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
             <button
               onClick={onClose}
               className={`w-full py-3 font-medium rounded-xl transition-colors border ${
-                viewOnly 
+                gameState.uiState.mode !== 'GAME_OVER' 
                   ? 'bg-orange-600 hover:bg-orange-500 text-white border-orange-500' 
                   : 'bg-stone-700 hover:bg-stone-600 text-stone-200 border-stone-600'
               }`}
             >
-              {viewOnly ? 'Back to Game' : 'Review Board'}
+              {gameState.uiState.mode !== 'GAME_OVER' ? 'Back to Game' : 'Review Board'}
             </button>
           </div>
         </div>

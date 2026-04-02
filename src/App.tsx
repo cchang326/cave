@@ -11,7 +11,7 @@ import { ScoreSummary } from './components/ScoreSummary';
 import { auth, signInWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { LogIn, LogOut, User as UserIcon, Trophy, History } from 'lucide-react';
-import { DebugPanel, DebugState } from './components/DebugPanel';
+import { SettingsPanel, SettingsState } from './components/Settings';
 import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { AdditionalCavernModal } from './components/AdditionalCavernModal';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
@@ -147,16 +147,19 @@ function initializeGame(): GameState {
   }
 
   const { availableActions, futureActions } = setupSoloActionBoard();
-  const firstNewAction = futureActions.shift()!;
-  availableActions.push(firstNewAction);
+  const firstNewAction = futureActions.shift();
+  if (firstNewAction) {
+    availableActions.push(firstNewAction);
+  }
 
   const initialActionBoard: ActionBoardState = {
     round: 1,
     turn: 1,
-    maxTurns: firstNewAction.stage === 2 ? 2 : firstNewAction.stage === 3 ? 3 : 4,
+    maxTurns: firstNewAction?.stage === 2 ? 2 : firstNewAction?.stage === 3 ? 3 : 4,
     availableActions,
     futureActions,
-    usedActionsThisRound: []
+    usedActionsThisRound: [],
+    totalRounds: futureActions.length + 1 // 7 rounds total for solo game
   };
 
   return {
@@ -184,7 +187,8 @@ function initializeGame(): GameState {
       dynamicCostAmount: 0,
       checklist: [],
       activatedRoomsThisTurn: [],
-      showIconicDescription: true
+      showIconicDescription: true,
+      showScoreSummary: false
     },
     conversionHistory: [],
     gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
@@ -193,7 +197,7 @@ function initializeGame(): GameState {
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(initializeGame());
-  const [debugState, setDebugState] = useState<DebugState>({});
+  const [settingsState, setSettingsState] = useState<SettingsState>({});
   const [user, setUser] = useState<User | null>(null);
   const autoExecutedRef = useRef<Set<string>>(new Set());
 
@@ -493,25 +497,28 @@ export default function App() {
       let nextMode: GameState['uiState']['mode'] = 'IDLE';
 
       if (newTurn > board.maxTurns) {
-        if (newFuture.length === 0) {
-          nextMode = 'GAME_OVER';
-        } else {
+        if (newRound < board.totalRounds) {
           newRound++;
           newTurn = 1;
-          const nextAction = newFuture.shift()!;
-          newAvailable.push(nextAction);
-          newMaxTurns = nextAction.stage === 2 ? 2 : nextAction.stage === 3 ? 3 : 4;
+          const nextAction = newFuture.shift();
+          if (nextAction) {
+            newAvailable.push(nextAction);
+            newMaxTurns = nextAction.stage === 2 ? 2 : nextAction.stage === 3 ? 3 : 4;
+          }
           nextUsed = [];
+        } else {
+          nextMode = 'GAME_OVER';
         }
       }
 
       nextState.actionBoard = {
         round: newRound,
-        turn: newTurn,
+        turn: nextMode === 'GAME_OVER' ? board.maxTurns : newTurn,
         maxTurns: newMaxTurns,
         availableActions: newAvailable,
         futureActions: newFuture,
-        usedActionsThisRound: nextUsed
+        usedActionsThisRound: nextUsed,
+        totalRounds: board.totalRounds
       };
 
       nextState.uiState = {
@@ -524,7 +531,9 @@ export default function App() {
         dynamicCostAmount: 0,
         checklist: [],
         activeActionTile: undefined,
-        activatedRoomsThisTurn: []
+        activatedRoomsThisTurn: [],
+        showIconicDescription: prev.uiState.showIconicDescription,
+        showScoreSummary: nextMode === 'GAME_OVER'
       };
 
       return nextState;
@@ -962,24 +971,16 @@ export default function App() {
     ? gameState.centralDisplay.find(r => r.id === gameState.uiState.selectedRoomId) 
     : undefined;
 
-  const isGameOver = gameState.actionBoard.futureActions.length === 0 && gameState.actionBoard.turn > gameState.actionBoard.maxTurns;
+  const isGameOver = gameState.uiState.mode === 'GAME_OVER';
 
   return (
-    <div className="min-h-screen bg-stone-900 text-stone-100 p-4 md:p-8 font-sans flex flex-col">
-      <div className="max-w-[1400px] mx-auto w-full space-y-6 flex-1 flex flex-col">
-        {gameState.uiState.mode === 'GAME_OVER' && (
+    <div className="min-h-screen bg-stone-900 text-stone-100 p-4 md:p-8 font-sans flex flex-col overflow-hidden">
+      <div className="max-w-[1400px] mx-auto w-full space-y-6 flex-1 flex flex-col overflow-hidden">
+        {gameState.uiState.showScoreSummary && (
           <ScoreSummary 
             gameState={gameState} 
             onPlayAgain={() => setGameState(initializeGame())} 
-            onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'IDLE' } }))}
-          />
-        )}
-        {gameState.uiState.mode === 'LEADERBOARD' && (
-          <ScoreSummary 
-            gameState={gameState} 
-            onPlayAgain={() => {}} 
-            onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'IDLE' } }))}
-            viewOnly={true}
+            onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, showScoreSummary: false } }))}
           />
         )}
         {gameState.uiState.mode === 'PAY_DYNAMIC' && (
@@ -1036,22 +1037,13 @@ export default function App() {
               Restart Game
             </button>
 
-            {isGameOver ? (
-              <button 
-                onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'GAME_OVER' } }))}
-                className="text-sm bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded border border-orange-500 transition-colors font-bold"
-              >
-                Show Final Score
-              </button>
-            ) : (
-              <button 
-                onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, mode: 'LEADERBOARD' } }))}
-                className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
-              >
-                <History className="w-4 h-4 text-orange-400" />
-                High Scores
-              </button>
-            )}
+            <button 
+              onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, showScoreSummary: true } }))}
+              className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
+            >
+              <History className="w-4 h-4 text-orange-400" />
+              High Scores
+            </button>
             
             {user ? (
               <div className="flex items-center gap-2 bg-stone-800 p-1.5 rounded-full border border-stone-700">
@@ -1082,14 +1074,15 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex flex-col gap-6 flex-1">
+        <main className="flex flex-col gap-6 flex-1 overflow-hidden">
           {/* Top Stripe: Action Board */}
-          <section className="shrink-0 flex gap-6">
-            <div className="flex-1">
+          <section className="shrink-0 flex gap-6 max-w-full w-full">
+            <div className="flex-1 min-w-0">
               <ActionBoard 
                 board={gameState.actionBoard} 
                 activeActionTile={gameState.uiState.activeActionTile}
                 showIconicDescription={gameState.uiState.showIconicDescription}
+                disabled={gameState.uiState.mode !== 'IDLE' || gameState.uiState.mode === 'GAME_OVER'}
                 onTakeAction={handleTakeAction} 
               />
             </div>
@@ -1149,7 +1142,7 @@ export default function App() {
           </section>
         </main>
       </div>
-      <DebugPanel debugState={debugState} setDebugState={setDebugState} gameState={gameState} setGameState={setGameState} />
+      <SettingsPanel settingsState={settingsState} setSettingsState={setSettingsState} gameState={gameState} setGameState={setGameState} />
       {gameState.uiState.showAdditionalCavernChoice && (
         <AdditionalCavernModal onSelect={handleSelectAdditionalCavern} />
       )}

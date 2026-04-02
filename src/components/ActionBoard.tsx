@@ -6,6 +6,7 @@ interface Props {
   board: ActionBoardState;
   activeActionTile?: string;
   showIconicDescription?: boolean;
+  disabled?: boolean;
   onTakeAction: (actionId: string) => void;
 }
 
@@ -13,17 +14,18 @@ export const ActionBoard: React.FC<Props> = ({
   board, 
   activeActionTile, 
   showIconicDescription = true, 
+  disabled = false,
   onTakeAction 
 }) => {
   return (
-    <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700">
+    <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700 w-full max-w-full overflow-hidden">
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-4">
           <h2 className="text-stone-300 text-sm font-bold uppercase tracking-wider">Action Board</h2>
           <div className="flex items-center gap-3">
             <div className="bg-stone-900 px-2 py-1 rounded border border-stone-700 flex items-center gap-2">
               <span className="text-stone-400 text-[10px] uppercase">Round</span>
-              <span className="text-orange-400 font-bold text-sm">{board.round} / 7</span>
+              <span className="text-orange-400 font-bold text-sm">{board.round} / {board.totalRounds}</span>
             </div>
             <div className="bg-stone-900 px-2 py-1 rounded border border-stone-700 flex items-center gap-2">
               <span className="text-stone-400 text-[10px] uppercase">Turn</span>
@@ -51,14 +53,14 @@ export const ActionBoard: React.FC<Props> = ({
         </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+      <div className="flex gap-3 overflow-x-auto pb-2 snap-x custom-scrollbar max-w-full w-full">
         {board.availableActions.map(action => {
           const isUsed = board.usedActionsThisRound.includes(action.id);
           const isActive = activeActionTile === action.id;
           return (
             <button
               key={action.id}
-              disabled={isUsed || isActive}
+              disabled={disabled || isUsed || isActive}
               onClick={() => onTakeAction(action.id)}
               title={action.description}
               className={`w-32 h-32 p-0.5 rounded-lg border-2 text-center transition-all flex flex-col items-center justify-start flex-shrink-0 snap-start relative
