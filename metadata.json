@@ -1,5 +1,5 @@
 {
-  "name": "Cave vs Cave",
-  "description": "A digital implementation of a board game.",
+  "name": "Caverna: Cave vs Cave",
+  "description": "A digital implementation of the solo board game Caverna: Cave vs Cave.",
   "requestFramePermissions": []
 }
