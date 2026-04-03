@@ -1,14 +1,21 @@
 import React from 'react';
-import { Square } from 'lucide-react';
+import { Square, X } from 'lucide-react';
 
 interface Props {
   onSelect: (walls: 2 | 3) => void;
+  onClose: () => void;
 }
 
-export const AdditionalCavernModal: React.FC<Props> = ({ onSelect }) => {
+export const AdditionalCavernModal: React.FC<Props> = ({ onSelect, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-stone-800 border-4 border-orange-600 rounded-2xl p-8 max-w-md w-full shadow-2xl transform animate-in fade-in zoom-in duration-300">
+      <div className="bg-stone-800 border-4 border-orange-600 rounded-2xl p-8 max-w-md w-full shadow-2xl transform animate-in fade-in zoom-in duration-300 relative">
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
         <h2 className="text-2xl font-black text-orange-500 uppercase tracking-tighter mb-4 text-center">Additional Cavern!</h2>
         <p className="text-stone-300 text-center mb-8 leading-relaxed">
           You have completely filled your cave! Choose which side of the Additional Cavern to place.

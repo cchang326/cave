@@ -75,10 +75,10 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
   const handleTriggerAdditionalCavern = () => {
     setGameState(prev => ({
       ...prev,
-      cheatsUsed: true,
       uiState: {
         ...prev.uiState,
-        showAdditionalCavernChoice: true
+        showAdditionalCavernChoice: true,
+        isTriggeredByCheat: true
       }
     }));
   };

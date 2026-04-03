@@ -85,6 +85,7 @@ export interface UIState {
   hasInteractedWithChecklist?: boolean;
   undoSnapshot?: string;
   showAdditionalCavernChoice?: boolean;
+  isTriggeredByCheat?: boolean;
   showIconicDescription: boolean;
   showScoreSummary: boolean;
 }

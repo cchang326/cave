@@ -242,8 +242,13 @@ export default function App() {
       const nextState = { 
         ...prev, 
         hasAdditionalCavern: true,
+        cheatsUsed: prev.cheatsUsed || !!prev.uiState.isTriggeredByCheat,
         cave: [...prev.cave],
-        uiState: { ...prev.uiState, showAdditionalCavernChoice: false }
+        uiState: { 
+          ...prev.uiState, 
+          showAdditionalCavernChoice: false,
+          isTriggeredByCheat: false
+        }
       };
 
       const openSides: ('top' | 'bottom' | 'left' | 'right')[] = [];
@@ -265,6 +270,17 @@ export default function App() {
 
       return nextState;
     });
+  };
+
+  const handleCloseAdditionalCavern = () => {
+    setGameState(prev => ({
+      ...prev,
+      uiState: {
+        ...prev.uiState,
+        showAdditionalCavernChoice: false,
+        isTriggeredByCheat: false
+      }
+    }));
   };
 
   const handleExecuteChecklist = (id: string, isManual: boolean = true) => {
@@ -1147,7 +1163,10 @@ export default function App() {
       </div>
       <SettingsPanel settingsState={settingsState} setSettingsState={setSettingsState} gameState={gameState} setGameState={setGameState} />
       {gameState.uiState.showAdditionalCavernChoice && (
-        <AdditionalCavernModal onSelect={handleSelectAdditionalCavern} />
+        <AdditionalCavernModal 
+          onSelect={handleSelectAdditionalCavern} 
+          onClose={handleCloseAdditionalCavern}
+        />
       )}
     </div>
   );
