@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, X, Trophy } from 'lucide-react';
+import { Settings, X, Trophy, BookOpen, ExternalLink } from 'lucide-react';
 import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
 import { ROOM_TILES } from '../data/roomTiles';
@@ -132,20 +132,18 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
         </button>
       </div>
       <div className="p-5 space-y-4">
-        <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-700">
-          <div className="flex items-center gap-2 mb-2 text-stone-300">
-            <Trophy className="w-4 h-4 text-orange-400" />
-            <span className="font-bold text-sm uppercase tracking-wider">Current Score</span>
-          </div>
-          <div className="flex justify-between items-end">
-            <div className="text-xs text-stone-500 space-y-1">
-              <div>Rooms: {currentScore.baseVP}</div>
-              <div>Gold: {currentScore.goldVP}</div>
-              <div>Bonus: {currentScore.bonusVP}</div>
+        <button
+          onClick={() => window.open('https://cdn.1j1ju.com/medias/56/be/12-caverna-cave-vs-cave-rulebook.pdf', '_blank')}
+          className="w-full p-2 bg-stone-900/50 hover:bg-stone-900/80 text-stone-200 rounded-lg border border-stone-700 flex items-center justify-between group transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-stone-800 rounded-md group-hover:bg-stone-700 transition-colors">
+              <BookOpen className="w-4 h-4 text-orange-400" />
             </div>
-            <div className="text-3xl font-black text-orange-400">{currentScore.totalVP}</div>
+            <span className="text-xs font-bold uppercase tracking-wider">Game Rules</span>
           </div>
-        </div>
+          <ExternalLink className="w-4 h-4 text-stone-500 group-hover:text-stone-300 transition-colors mr-1" />
+        </button>
 
         <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
           <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Iconic Descriptions</span>
