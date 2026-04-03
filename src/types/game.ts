@@ -100,4 +100,5 @@ export interface GameState {
   hasAdditionalCavern: boolean;
   conversionHistory: (keyof GoodsState)[];
   gameId: string;
+  cheatsUsed: boolean;
 }

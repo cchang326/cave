@@ -23,6 +23,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
   const handleMaxOutResources = () => {
     setGameState(prev => ({
       ...prev,
+      cheatsUsed: true,
       goods: {
         wood: 9,
         stone: 9,
@@ -63,6 +64,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
 
       return {
         ...prev,
+        cheatsUsed: true,
         cave: newCave,
         centralDisplay: newCentralDisplay,
         roomTileDeck: []
@@ -73,6 +75,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
   const handleTriggerAdditionalCavern = () => {
     setGameState(prev => ({
       ...prev,
+      cheatsUsed: true,
       uiState: {
         ...prev.uiState,
         showAdditionalCavernChoice: true
@@ -93,6 +96,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
   const handleRevealAllActionTiles = () => {
     setGameState(prev => ({
       ...prev,
+      cheatsUsed: true,
       actionBoard: {
         ...prev.actionBoard,
         availableActions: [
@@ -127,7 +131,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
           <X className="w-5 h-5" />
         </button>
       </div>
-      <div className="p-5 space-y-6">
+      <div className="p-5 space-y-4">
         <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-700">
           <div className="flex items-center gap-2 mb-2 text-stone-300">
             <Trophy className="w-4 h-4 text-orange-400" />
@@ -157,7 +161,12 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
           </button>
         </div>
 
-        <div className="pt-4 border-t border-stone-700 space-y-2">
+        <div className="space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 flex items-center gap-2 py-2 opacity-60">
+            <div className="h-px bg-stone-500/50 flex-1" />
+            CHEATS
+            <div className="h-px bg-stone-500/50 flex-1" />
+          </div>
           <button
             onClick={handleRevealAllActionTiles}
             className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
@@ -165,21 +174,21 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
             Reveal Action Tiles
           </button>
           <button
-            onClick={handleMaxOutResources}
-            className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
-          >
-            Max out Resource
-          </button>
-          <button
             onClick={handleDebugExcavateAll}
             className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
           >
             Excavate All
           </button>
+          <button
+            onClick={handleMaxOutResources}
+            className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
+          >
+            Max Out Resources
+          </button>
           {!gameState.hasAdditionalCavern && (
             <button
               onClick={handleTriggerAdditionalCavern}
-              className="w-full py-2 bg-orange-900/40 hover:bg-orange-900/60 text-orange-200 border border-orange-800/50 rounded-lg text-sm font-bold transition-colors"
+              className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-stone-200 rounded-lg text-sm font-bold transition-colors"
             >
               Trigger Add. Cavern
             </button>

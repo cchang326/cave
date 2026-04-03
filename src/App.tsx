@@ -10,6 +10,7 @@ import { ChecklistUI } from './components/ChecklistUI';
 import { ScoreSummary } from './components/ScoreSummary';
 import { auth, signInWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { incrementVisits } from './services/statsService';
 import { LogIn, LogOut, User as UserIcon, Trophy, History } from 'lucide-react';
 import { SettingsPanel, SettingsState } from './components/Settings';
 import { SelectGoodsModal } from './components/SelectGoodsModal';
@@ -191,7 +192,8 @@ function initializeGame(): GameState {
       showScoreSummary: false
     },
     conversionHistory: [],
-    gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+    cheatsUsed: false
   };
 }
 
@@ -202,6 +204,7 @@ export default function App() {
   const autoExecutedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    incrementVisits();
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
     });

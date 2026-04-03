@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../types/game';
-import { Trophy, Coins, Home, Star, User, Loader2, History, Calendar } from 'lucide-react';
+import { Trophy, Coins, Home, Star, User, Loader2, History, Calendar, Zap, CheckSquare as CheckSquareIcon, Square as SquareIcon } from 'lucide-react';
 import { calculateScore } from '../utils/scoring';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, where, getDocs } from 'firebase/firestore';
+import { incrementGamesFinished, subscribeToGlobalStats, GlobalStats } from '../services/statsService';
+import { Users, PlayCircle } from 'lucide-react';
 
 interface Props {
   gameState: GameState;
@@ -17,6 +19,7 @@ interface GameHistoryEntry {
   userId: string;
   score: number;
   timestamp: any;
+  cheatsUsed: boolean;
 }
 
 export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose, viewOnly = false }) => {
@@ -26,6 +29,14 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
   const [history, setHistory] = useState<GameHistoryEntry[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [newlySavedId, setNewlySavedId] = useState<string | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [showCheats, setShowCheats] = useState(true);
+
+  useEffect(() => {
+    if (auth.currentUser?.email !== 'chengchang@gmail.com') return;
+    const unsubStats = subscribeToGlobalStats(setGlobalStats);
+    return () => unsubStats();
+  }, [auth.currentUser?.email]);
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -88,11 +99,15 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
         gameId: gameState.gameId,
         score: totalVP,
         gameState: JSON.parse(JSON.stringify(gameState)), // Deep copy to avoid circular refs if any
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
+        cheatsUsed: gameState.cheatsUsed
       };
 
       const docRef = await addDoc(collection(db, 'game_logs'), logData);
       setNewlySavedId(docRef.id);
+      
+      // Increment global games finished count
+      await incrementGamesFinished();
       
       setHasSaved(true);
     } catch (error) {
@@ -191,9 +206,20 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
         </div>
 
         <div className="flex-1 border-l border-stone-700 pl-0 md:pl-8 pt-8 md:pt-0">
-          <div className="flex items-center gap-3 mb-6">
-            <Trophy className="w-6 h-6 text-orange-400" />
-            <h3 className="text-xl font-bold text-stone-100">High Scores</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-6 h-6 text-orange-400" />
+              <h3 className="text-xl font-bold text-stone-100">High Scores</h3>
+            </div>
+            {auth.currentUser && (
+              <button 
+                onClick={() => setShowCheats(!showCheats)}
+                className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-stone-300 transition-colors"
+              >
+                {showCheats ? <CheckSquareIcon className="w-3.5 h-3.5 text-orange-500" /> : <SquareIcon className="w-3.5 h-3.5" />}
+                Show Cheats
+              </button>
+            )}
           </div>
 
           {!auth.currentUser ? (
@@ -213,39 +239,46 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
                   <p>No high scores yet.</p>
                 </div>
               ) : (
-                history.map((entry, idx) => (
-                  <div 
-                    key={entry.id} 
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      entry.id === newlySavedId 
-                        ? 'bg-orange-900/40 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
-                        : 'bg-stone-900/50 border-stone-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-6 text-center font-bold ${
-                        idx === 0 ? 'text-yellow-400' : 
-                        idx === 1 ? 'text-stone-300' : 
-                        idx === 2 ? 'text-orange-400' : 'text-stone-500'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="text-stone-400 text-[10px]">
-                          {formatDate(entry.timestamp)}
+                history
+                  .filter(entry => showCheats || !entry.cheatsUsed)
+                  .map((entry, idx) => (
+                    <div 
+                      key={entry.id} 
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        entry.id === newlySavedId 
+                          ? 'bg-orange-900/40 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
+                          : 'bg-stone-900/50 border-stone-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-6 text-center font-bold ${
+                          idx === 0 ? 'text-yellow-400' : 
+                          idx === 1 ? 'text-stone-300' : 
+                          idx === 2 ? 'text-orange-400' : 'text-stone-500'
+                        }`}>
+                          {idx + 1}
                         </span>
-                        <span className="text-stone-200 font-medium">
-                          Score: <span className="text-orange-400 font-bold">{entry.score}</span>
-                        </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-stone-400 text-[10px]">
+                              {formatDate(entry.timestamp)}
+                            </span>
+                            {entry.cheatsUsed && (
+                              <Zap className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" title="Cheats used" />
+                            )}
+                          </div>
+                          <span className="text-stone-200 font-medium">
+                            Score: <span className="text-orange-400 font-bold">{entry.score}</span>
+                          </span>
+                        </div>
                       </div>
+                      {entry.id === newlySavedId && (
+                        <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider bg-orange-400/10 px-2 py-0.5 rounded">
+                          New!
+                        </span>
+                      )}
                     </div>
-                    {entry.id === newlySavedId && (
-                      <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider bg-orange-400/10 px-2 py-0.5 rounded">
-                        New!
-                      </span>
-                    )}
-                  </div>
-                ))
+                  ))
               )}
               {isSaving && (
                 <div className="flex items-center justify-center gap-2 text-stone-400 text-sm py-2">
@@ -258,6 +291,35 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
                   Score saved to your history!
                 </div>
               )}
+            </div>
+          )}
+
+          {globalStats && auth.currentUser?.email === 'chengchang@gmail.com' && (
+            <div className="mt-8 pt-6 border-t border-stone-700">
+              <div className="flex items-center gap-3 mb-4">
+                <History className="w-5 h-5 text-stone-500" />
+                <h4 className="text-sm font-bold text-stone-400 uppercase tracking-wider">Global Statistics</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-900/40 p-3 rounded-lg border border-stone-700/50">
+                  <div className="flex items-center gap-2 text-stone-500 mb-1">
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Total Visits</span>
+                  </div>
+                  <div className="text-xl font-black text-stone-300 tracking-tight">
+                    {globalStats.visits.toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-stone-900/40 p-3 rounded-lg border border-stone-700/50">
+                  <div className="flex items-center gap-2 text-stone-500 mb-1">
+                    <PlayCircle className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter">Games Finished</span>
+                  </div>
+                  <div className="text-xl font-black text-stone-300 tracking-tight">
+                    {globalStats.gamesFinished.toLocaleString()}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

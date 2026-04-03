@@ -20,12 +20,13 @@ service cloud.firestore {
     }
 
     function isValidGameLog(data) {
-      return data.keys().hasAll(['userId', 'gameId', 'score', 'gameState', 'timestamp']) &&
+      return data.keys().hasAll(['userId', 'gameId', 'score', 'gameState', 'timestamp', 'cheatsUsed']) &&
              data.userId is string &&
              data.gameId is string &&
              data.score is int &&
              data.gameState is map &&
-             data.timestamp is timestamp;
+             data.timestamp is timestamp &&
+             data.cheatsUsed is bool;
     }
 
     // ===============================================================
@@ -49,6 +50,22 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId) && 
                               (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+    }
+
+    match /stats/{statId} {
+      // Anyone can read global stats
+      allow read: if true;
+      
+      // Only admins can create or delete stats documents
+      allow create, delete: if isAdmin();
+      
+      // Anyone can increment the stats, but only by 1 at a time and only these specific fields
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visits', 'gamesFinished'])) &&
+                       (
+                         (request.resource.data.visits == resource.data.visits + 1 && request.resource.data.gamesFinished == resource.data.gamesFinished) ||
+                         (request.resource.data.gamesFinished == resource.data.gamesFinished + 1 && request.resource.data.visits == resource.data.visits) ||
+                         (request.resource.data.visits == resource.data.visits + 1 && request.resource.data.gamesFinished == resource.data.gamesFinished + 1)
+                       );
     }
   }
 }
