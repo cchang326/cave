@@ -1,16 +1,22 @@
 import React, { ReactNode } from 'react';
-import { RoomTile } from '../types/game';
+import { RoomTile, GoodsState, CaveSpace } from '../types/game';
 import { WallRequirementIcon } from './WallRequirementIcon';
 import { IconicDescription } from './IconicDescription';
-import { TreePine, Wheat, Leaf, Drumstick, Coins, Shield } from 'lucide-react';
+import { TreePine, Wheat, Leaf, Drumstick, Coins, Shield, CheckSquare as CheckSquareIcon, Square as SquareIcon } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
+import { isValidRoomPlacement } from '../utils/walls';
 
 interface Props {
   tiles: RoomTile[];
+  goods: GoodsState;
+  cave: CaveSpace[];
+  walls: string[];
   isSelectable?: boolean;
   selectedRoomId?: string;
   showIconicDescription?: boolean;
+  highlightFurnishable: boolean;
   onRoomClick?: (id: string) => void;
+  onToggleHighlight: () => void;
 }
 
 const renderCost = (cost: RoomTile['cost']): ReactNode => {
@@ -69,26 +75,65 @@ const renderCost = (cost: RoomTile['cost']): ReactNode => {
 
 export const CentralDisplay: React.FC<Props> = ({ 
   tiles, 
+  goods,
+  cave,
+  walls,
   isSelectable = false, 
   selectedRoomId, 
   showIconicDescription = true,
-  onRoomClick 
+  highlightFurnishable,
+  onRoomClick,
+  onToggleHighlight
 }) => {
+  const canAfford = (tile: RoomTile): boolean => {
+    return Object.entries(tile.cost).every(([good, amount]) => {
+      return (goods[good as keyof GoodsState] || 0) >= (amount as number);
+    });
+  };
+
+  const hasCompatibleSpace = (tile: RoomTile): boolean => {
+    return cave.some(space => 
+      (space.state === 'EMPTY' || space.state === 'CROSSED_PICKAXES') && 
+      isValidRoomPlacement(space, walls, tile.wallRequirement)
+    );
+  };
+
+  const isFurnishable = (tile: RoomTile): boolean => {
+    return canAfford(tile) && hasCompatibleSpace(tile);
+  };
+
   return (
-    <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700 min-h-full">
-      <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest mb-4 text-center">Central Display</h2>
+    <div className="bg-stone-800 p-4 rounded-xl shadow-lg border border-stone-700 min-h-full relative">
+      <div className="flex justify-between items-center mb-4">
+        <div className="w-24" /> {/* Spacer */}
+        <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest text-center">Central Display</h2>
+        <button 
+          onClick={onToggleHighlight}
+          className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-stone-400 hover:text-stone-200 transition-colors"
+        >
+          {highlightFurnishable ? <CheckSquareIcon className="w-3.5 h-3.5 text-orange-500" /> : <SquareIcon className="w-3.5 h-3.5" />}
+          Highlight Furnishable
+        </button>
+      </div>
       <div className="grid grid-cols-4 gap-3 justify-items-center">
         {tiles.map(tile => {
           const isSelected = selectedRoomId === tile.id;
+          const furnishable = isFurnishable(tile);
+          const isActuallySelectable = isSelectable && furnishable;
+          const shouldDarken = (highlightFurnishable || isSelectable) && !furnishable;
+          const shouldBlink = isActuallySelectable;
+
           return (
             <div 
               key={tile.id} 
-              onClick={() => isSelectable && onRoomClick && onRoomClick(tile.id)}
+              onClick={() => isActuallySelectable && onRoomClick && onRoomClick(tile.id)}
               title={tile.effectDescription}
               className={`w-32 h-32 rounded-lg p-0.5 border-2 flex flex-col items-center justify-start text-center relative shadow-md transition-all
                 ${tile.color === 'orange' ? 'bg-orange-100 border-orange-400' : 'bg-blue-100 border-blue-400'}
-                ${isSelectable ? 'cursor-pointer hover:scale-105 ring-4 ring-orange-400/50 animate-pulse' : ''}
+                ${isActuallySelectable ? 'cursor-pointer hover:scale-105' : 'cursor-default'}
+                ${shouldBlink ? 'ring-4 ring-orange-400/50 animate-pulse' : ''}
                 ${isSelected ? 'ring-8 ring-orange-500/50 border-orange-600 scale-110 z-10' : ''}
+                ${shouldDarken ? 'opacity-40 grayscale-[0.5] brightness-50' : ''}
               `}
             >
               {isSelected && (

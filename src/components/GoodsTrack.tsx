@@ -20,13 +20,14 @@ export const GoodsTrack: React.FC<Props> = ({ goods, onExchange, onUndoExchange,
     gold: <Coins className="w-5 h-5 text-yellow-400" />,
   };
 
+  const goodOrder: (keyof GoodsState)[] = ['wood', 'stone', 'emmer', 'flax', 'food', 'gold'];
   const exchangeable: (keyof GoodsState)[] = ['emmer', 'flax', 'gold'];
 
   return (
     <div className="bg-stone-800/90 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-stone-700 w-full">
       <div className="flex items-center gap-4 overflow-x-auto">
         <div className="flex gap-2 flex-1">
-          {(Object.keys(goods) as Array<keyof GoodsState>).map((good) => (
+          {goodOrder.map((good) => (
             <div key={good} className="flex items-center bg-stone-900/80 px-3 py-2 rounded-lg border border-stone-700 min-w-[100px] justify-between group relative">
               <div className="flex items-center gap-2">
                 {goodIcons[good]}

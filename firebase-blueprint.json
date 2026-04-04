@@ -1,37 +1,40 @@
 {
   "entities": {
-    "GameLog": {
-      "title": "Game Log",
-      "description": "A detailed log of a single game, including the final score and game state.",
+    "GameSave": {
+      "title": "Game Save",
+      "description": "A saved game state for a user.",
       "type": "object",
       "properties": {
-        "userId": { "type": "string", "description": "The unique ID of the player." },
-        "gameId": { "type": "string", "description": "The unique ID of the game session." },
-        "score": { "type": "integer", "description": "The final score achieved." },
-        "gameState": { "type": "object", "description": "The final state of the game." },
-        "timestamp": { "type": "string", "format": "date-time", "description": "When the game was completed." },
-        "cheatsUsed": { "type": "boolean", "description": "Whether the player used any cheats during the game." }
+        "state": {
+          "type": "object",
+          "description": "The full GameState object."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time when the game was last saved."
+        },
+        "isGameOver": {
+          "type": "boolean",
+          "description": "Whether the game is over."
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "round": { "type": "integer" },
+            "turn": { "type": "integer" },
+            "score": { "type": "integer" }
+          },
+          "required": ["round", "turn", "score"]
+        }
       },
-      "required": ["userId", "score", "gameState", "timestamp", "cheatsUsed"]
-    },
-    "GlobalStats": {
-      "title": "Global Stats",
-      "description": "Aggregated statistics for the application.",
-      "type": "object",
-      "properties": {
-        "visits": { "type": "integer", "description": "Total number of app visits." },
-        "gamesFinished": { "type": "integer", "description": "Total number of games completed." }
-      }
+      "required": ["state", "updatedAt", "isGameOver", "metadata"]
     }
   },
   "firestore": {
-    "/game_logs/{logId}": {
-      "schema": "GameLog",
-      "description": "Personal game history for users."
-    },
-    "/stats/{statId}": {
-      "schema": "GlobalStats",
-      "description": "Global application statistics."
+    "/users/{userId}/gameSaves/{slotId}": {
+      "schema": "GameSave",
+      "description": "A collection of game saves for a specific user."
     }
   }
 }

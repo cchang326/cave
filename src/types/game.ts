@@ -87,6 +87,7 @@ export interface UIState {
   showAdditionalCavernChoice?: boolean;
   isTriggeredByCheat?: boolean;
   showIconicDescription: boolean;
+  highlightFurnishable: boolean;
   showScoreSummary: boolean;
 }
 

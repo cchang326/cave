@@ -50,6 +50,10 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId) && 
                               (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
+
+      match /gameSaves/{slotId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     match /stats/{statId} {

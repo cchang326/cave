@@ -11,10 +11,12 @@ import { ScoreSummary } from './components/ScoreSummary';
 import { auth, signInWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { incrementVisits } from './services/statsService';
-import { LogIn, LogOut, User as UserIcon, Trophy, History } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, Trophy, History, Clock } from 'lucide-react';
 import { SettingsPanel, SettingsState } from './components/Settings';
 import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { AdditionalCavernModal } from './components/AdditionalCavernModal';
+import { LoadGameModal } from './components/LoadGameModal';
+import { saveService, GameSave } from './services/saveService';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
 import { isValidRoomPlacement } from './utils/walls';
 
@@ -189,6 +191,7 @@ function initializeGame(): GameState {
       checklist: [],
       activatedRoomsThisTurn: [],
       showIconicDescription: true,
+      highlightFurnishable: false,
       showScoreSummary: false
     },
     conversionHistory: [],
@@ -201,21 +204,70 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>(initializeGame());
   const [settingsState, setSettingsState] = useState<SettingsState>({});
   const [user, setUser] = useState<User | null>(null);
+  const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const autoExecutedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     incrementVisits();
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (u) {
+        // Case: User just logged in
+        // Check if there's an ongoing game (Round > 1 or Turn > 1 or any actions taken)
+        // We use a ref to get the current gameState without adding it to dependencies
+        const currentState = gameStateRef.current;
+        const isOngoing = currentState.actionBoard.round > 1 || 
+                          currentState.actionBoard.turn > 1 || 
+                          currentState.actionBoard.usedActionsThisRound.length > 0;
+        
+        if (isOngoing) {
+          // Mid-game login: Save current game to an open slot
+          const openSlot = await saveService.findOpenSlot();
+          setCurrentSlotId(openSlot);
+          await saveService.saveGame(openSlot, currentState);
+        } else {
+          // Page load login: Auto-load most recent unfinished game
+          const recentSave = await saveService.getMostRecentUnfinishedSave();
+          if (recentSave) {
+            setGameState(recentSave.state);
+            setCurrentSlotId(recentSave.id);
+          } else {
+            // No unfinished saves, prepare for a new game save in an open slot
+            const openSlot = await saveService.findOpenSlot();
+            setCurrentSlotId(openSlot);
+          }
+        }
+      } else {
+        // User logged out
+        setCurrentSlotId(null);
+      }
       setUser(u);
     });
     return () => unsubscribe();
-  }, []);
+  }, []); // Only run once on mount
+
+  // Keep a ref to gameState for the auth useEffect
+  const gameStateRef = useRef(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
   useEffect(() => {
     if (gameState.uiState.checklist.length === 0) {
       autoExecutedRef.current.clear();
     }
   }, [gameState.uiState.checklist.length]);
+
+  const handleToggleHighlight = () => {
+    setGameState(prev => ({
+      ...prev,
+      uiState: {
+        ...prev.uiState,
+        highlightFurnishable: !prev.uiState.highlightFurnishable
+      }
+    }));
+  };
 
   const handleTakeAction = (actionId: string) => {
     if (gameState.uiState.mode !== 'IDLE') return;
@@ -552,11 +604,55 @@ export default function App() {
         activeActionTile: undefined,
         activatedRoomsThisTurn: [],
         showIconicDescription: prev.uiState.showIconicDescription,
+        highlightFurnishable: prev.uiState.highlightFurnishable,
         showScoreSummary: nextMode === 'GAME_OVER'
       };
 
+      // Auto-save if logged in
+      if (user) {
+        setIsSaving(true);
+        const performSave = async (slotId: string) => {
+          await saveService.saveGame(slotId, nextState);
+          setIsSaving(false);
+        };
+
+        if (currentSlotId) {
+          performSave(currentSlotId);
+        } else {
+          // Find slot on the fly if missing
+          saveService.findOpenSlot().then(slotId => {
+            setCurrentSlotId(slotId);
+            performSave(slotId);
+          });
+        }
+      }
+
       return nextState;
     });
+  };
+
+  const handleRestartGame = () => {
+    if (window.confirm("Are you sure you want to restart the game? All current progress will be lost.")) {
+      const newState = initializeGame();
+      setGameState(newState);
+      // If logged in, we should probably save the new state to the current slot
+      if (user && currentSlotId) {
+        saveService.saveGame(currentSlotId, newState);
+      }
+    }
+  };
+
+  const handleLoadSave = (slotId: string, save?: GameSave) => {
+    if (save) {
+      setGameState(save.state);
+    } else {
+      // Empty slot selected: Always start a new game in this slot
+      const newState = initializeGame();
+      setGameState(newState);
+      saveService.saveGame(slotId, newState);
+    }
+    setCurrentSlotId(slotId);
+    setShowLoadModal(false);
   };
 
   const checkCompletion = (nextState: GameState) => {
@@ -1049,12 +1145,28 @@ export default function App() {
             <p className="text-stone-400">Solo Implementation</p>
           </div>
           <div className="flex items-center gap-4">
+            {isSaving && (
+              <div className="flex items-center gap-2 text-stone-500 text-[10px] uppercase font-bold tracking-widest animate-pulse">
+                <div className="w-1.5 h-1.5 bg-stone-500 rounded-full"></div>
+                Saving...
+              </div>
+            )}
             <button 
-              onClick={() => setGameState(initializeGame())}
+              onClick={handleRestartGame}
               className="text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
             >
               Restart Game
             </button>
+
+            {user && (
+              <button 
+                onClick={() => setShowLoadModal(true)}
+                className="flex items-center gap-2 text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
+              >
+                <Clock className="w-4 h-4 text-stone-400" />
+                Load Game
+              </button>
+            )}
 
             <button 
               onClick={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, showScoreSummary: true } }))}
@@ -1152,10 +1264,15 @@ export default function App() {
             <div className="flex-none w-[620px] overflow-auto pb-8 h-full">
               <CentralDisplay 
                 tiles={gameState.centralDisplay} 
+                goods={gameState.goods}
+                cave={gameState.cave}
+                walls={gameState.walls}
                 isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM'}
                 selectedRoomId={gameState.uiState.selectedRoomId}
                 showIconicDescription={gameState.uiState.showIconicDescription}
+                highlightFurnishable={gameState.uiState.highlightFurnishable}
                 onRoomClick={handleRoomClick}
+                onToggleHighlight={handleToggleHighlight}
               />
             </div>
           </section>
@@ -1166,6 +1283,13 @@ export default function App() {
         <AdditionalCavernModal 
           onSelect={handleSelectAdditionalCavern} 
           onClose={handleCloseAdditionalCavern}
+        />
+      )}
+      {showLoadModal && (
+        <LoadGameModal 
+          currentSlotId={currentSlotId}
+          onLoad={handleLoadSave}
+          onClose={() => setShowLoadModal(false)}
         />
       )}
     </div>
