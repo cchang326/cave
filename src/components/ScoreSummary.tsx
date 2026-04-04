@@ -3,7 +3,7 @@ import { GameState } from '../types/game';
 import { Trophy, Coins, Home, Star, User, Loader2, History, Calendar, Zap, CheckSquare as CheckSquareIcon, Square as SquareIcon } from 'lucide-react';
 import { calculateScore } from '../utils/scoring';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, where, getDocs } from 'firebase/firestore';
+import { collection, serverTimestamp, query, orderBy, limit, onSnapshot, where, doc, getDoc, setDoc, getDocs } from 'firebase/firestore';
 import { incrementGamesFinished, subscribeToGlobalStats, GlobalStats } from '../services/statsService';
 import { Users, PlayCircle } from 'lucide-react';
 
@@ -44,10 +44,14 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
       return;
     }
 
+    // We want to show the top scores. 
+    // Note: This query requires a composite index on userId and score.
+    // If the index is missing, it will fall back to a simpler query in the error handler.
     const q = query(
       collection(db, 'game_logs'), 
       where('userId', '==', auth.currentUser.uid),
-      limit(50) // Fetch enough to find top 10
+      orderBy('score', 'desc'),
+      limit(20)
     );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -56,7 +60,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
         ...doc.data()
       })) as GameHistoryEntry[];
       
-      // Sort by score descending, then by timestamp descending
+      // Secondary sort by timestamp descending in case scores are equal
       const sortedEntries = [...entries].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         const timeA = a.timestamp?.toMillis?.() || 0;
@@ -66,9 +70,41 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
       
       setHistory(sortedEntries.slice(0, 10));
       setIsLoadingHistory(false);
-    }, (error) => {
+    }, async (error) => {
       console.error("History error:", error);
-      setIsLoadingHistory(false);
+      
+      // Fallback: If the ordered query fails (likely due to missing index),
+      // try a simpler query and sort client-side.
+      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+        try {
+          const fallbackQ = query(
+            collection(db, 'game_logs'),
+            where('userId', '==', auth.currentUser!.uid),
+            limit(100)
+          );
+          
+          const snapshot = await getDocs(fallbackQ);
+          const entries = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as GameHistoryEntry[];
+          
+          const sortedEntries = [...entries].sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            const timeA = a.timestamp?.toMillis?.() || 0;
+            const timeB = b.timestamp?.toMillis?.() || 0;
+            return timeB - timeA;
+          });
+          
+          setHistory(sortedEntries.slice(0, 10));
+        } catch (fallbackError) {
+          console.error("Fallback history error:", fallbackError);
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      } else {
+        setIsLoadingHistory(false);
+      }
     });
 
     return () => unsubscribe();
@@ -79,39 +115,43 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
 
     setIsSaving(true);
     try {
-      // Check if this gameId has already been saved to avoid duplicates
-      const q = query(
-        collection(db, 'game_logs'),
-        where('userId', '==', auth.currentUser.uid),
-        where('gameId', '==', gameState.gameId),
-        limit(1)
-      );
+      // Use gameId as the document ID. This ensures that:
+      // 1. We don't save duplicates for the same game session.
+      // 2. If a user replays a save slot and gets a better score, it updates the record.
+      const docId = gameState.gameId;
+      const docRef = doc(db, 'game_logs', docId);
       
-      const existingDocs = await getDocs(q);
-      if (!existingDocs.empty) {
-        setNewlySavedId(existingDocs.docs[0].id);
-        setHasSaved(true);
-        return;
+      // Check if we already have a score for this gameId
+      const existingDoc = await getDoc(docRef);
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        // Only update if the new score is better or if it's a different game session
+        // (though gameId should be unique to the session)
+        if (existingData.score >= totalVP) {
+          setNewlySavedId(docId);
+          setHasSaved(true);
+          return;
+        }
       }
 
       const logData = {
         userId: auth.currentUser.uid,
         gameId: gameState.gameId,
         score: totalVP,
-        gameState: JSON.parse(JSON.stringify(gameState)), // Deep copy to avoid circular refs if any
+        gameState: JSON.parse(JSON.stringify(gameState)),
         timestamp: serverTimestamp(),
         cheatsUsed: gameState.cheatsUsed
       };
 
-      const docRef = await addDoc(collection(db, 'game_logs'), logData);
-      setNewlySavedId(docRef.id);
+      await setDoc(docRef, logData, { merge: true });
+      setNewlySavedId(docId);
       
       // Increment global games finished count
       await incrementGamesFinished();
       
       setHasSaved(true);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'game_logs');
+      handleFirestoreError(error, OperationType.WRITE, 'game_logs');
     } finally {
       setIsSaving(false);
     }
