@@ -145,7 +145,7 @@ export function generateChecklistForAction(actionId: string, board: ActionBoardS
     case 'renovation':
       items = [
         { id: 'r1', text: 'Build a wall', actionType: 'BUILD_WALL', optional: true, status: 'TODO', data: { count: 1 } },
-        { id: 'r2', text: 'Furnish a cavern at no additional cost', actionType: 'FURNISH', optional: true, status: 'TODO', data: { count: 1, freeFurnish: true } }
+        { id: 'r2', text: 'Furnish a cavern (pay room cost only)', actionType: 'FURNISH', optional: true, status: 'TODO', data: { count: 1 } }
       ];
       break;
     default:

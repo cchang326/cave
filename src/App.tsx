@@ -709,7 +709,15 @@ export default function App() {
 
   const handleRoomClick = (roomId: string) => {
     setGameState(prev => {
-      if (prev.uiState.mode === 'FURNISH_SELECT_ROOM') {
+      if (prev.uiState.mode === 'FURNISH_SELECT_ROOM' || prev.uiState.mode === 'FURNISH_SELECT_SPACE') {
+        // Deselect if clicking the same room
+        if (prev.uiState.mode === 'FURNISH_SELECT_SPACE' && prev.uiState.selectedRoomId === roomId) {
+          return {
+            ...prev,
+            uiState: { ...prev.uiState, mode: 'FURNISH_SELECT_ROOM', selectedRoomId: undefined }
+          };
+        }
+
         const room = prev.centralDisplay.find(r => r.id === roomId);
         if (!room) return prev;
 
@@ -726,10 +734,9 @@ export default function App() {
         }
 
         const itemIndex = prev.uiState.checklist.findIndex(i => i.status === 'DOING' && i.actionType === 'FURNISH');
-        const isFree = itemIndex !== -1 && prev.uiState.checklist[itemIndex].data?.freeFurnish;
 
         // Check if user has enough resources
-        const hasEnough = isFree || Object.entries(room.cost).every(([key, value]) => {
+        const hasEnough = Object.entries(room.cost).every(([key, value]) => {
           return (prev.goods[key as keyof typeof prev.goods] || 0) >= (value as number);
         });
 
@@ -1267,7 +1274,7 @@ export default function App() {
                 goods={gameState.goods}
                 cave={gameState.cave}
                 walls={gameState.walls}
-                isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM'}
+                isSelectable={gameState.uiState.mode === 'FURNISH_SELECT_ROOM' || gameState.uiState.mode === 'FURNISH_SELECT_SPACE'}
                 selectedRoomId={gameState.uiState.selectedRoomId}
                 showIconicDescription={gameState.uiState.showIconicDescription}
                 highlightFurnishable={gameState.uiState.highlightFurnishable}

@@ -99,7 +99,21 @@ export const CentralDisplay: React.FC<Props> = ({
   };
 
   const isFurnishable = (tile: RoomTile): boolean => {
-    return canAfford(tile) && hasCompatibleSpace(tile);
+    // Basic affordance and space checks
+    if (!canAfford(tile) || !hasCompatibleSpace(tile)) return false;
+
+    // Rule: You must always have more orange Rooms than blue Rooms.
+    // You may not build a blue Room if you would have an equal number of orange and blue Rooms.
+    if (tile.color === 'blue') {
+      const orangeRooms = cave.filter(s => (s.state === 'FURNISHED' || s.state === 'ENTRANCE') && s.tile?.color === 'orange').length;
+      const blueRooms = cave.filter(s => s.state === 'FURNISHED' && s.tile?.color === 'blue').length;
+      
+      if (blueRooms + 1 >= orangeRooms) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   return (
