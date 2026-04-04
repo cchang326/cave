@@ -4,7 +4,7 @@ export const STARTING_ACTIONS: ActionTile[] = [
   { id: 'cultivation', name: 'Cultivation', stage: 0, description: 'Activate 1 orange room AND/OR Gain up to 2 emmer AND/OR Gain 1 flax', iconicDescription: '[1] \n +2[emmer] +1[flax]' },
   { id: 'housework', name: 'Housework', stage: 0, description: 'Pay food equal to the number of turns this round to furnish a cavern AND/OR Pay either 5 food or 1 gold to furnish a cavern', iconicDescription: '?[food] [arrow-right] [furnish] \n 5[food] | 1[gold] [arrow-right] [furnish]' },
   { id: 'excavation', name: 'Excavation', stage: 0, description: 'Excavate once OR pay 2 food to excavate twice AND/OR Gain 1 stone', iconicDescription: '[pickaxe] | 2[food] [arrow-right] [pickaxe] [pickaxe] \n  +1[stone]' },
-  { id: 'undergrowth', name: 'Undergrowth', stage: 0, description: 'Activate 1 orange room AND/OR Gain up to 2 wood', iconicDescription: '[1] | +2[wood]' },
+  { id: 'undergrowth', name: 'Undergrowth', stage: 0, description: 'Activate 1 orange room AND/OR Gain up to 2 wood', iconicDescription: '[1] [space] +2[wood]' },
 ];
 
 export const STAGE_2_ACTIONS: ActionTile[] = [

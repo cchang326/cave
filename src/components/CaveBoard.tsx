@@ -119,8 +119,8 @@ export const CaveBoard: React.FC<Props> = ({
                 `}
               >
                 {isActivated && (
-                  <div className="absolute inset-0 bg-stone-900/20 flex items-center justify-center pointer-events-none z-20 rounded-lg">
-                    <span className="bg-stone-800/90 text-stone-400 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border border-stone-600 shadow-lg transform -rotate-12">Activated</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-stone-800/95 border-t border-stone-600 py-0.5 flex items-center justify-center pointer-events-none z-20 rounded-b-lg">
+                    <span className="text-stone-400 text-[8px] font-bold uppercase tracking-[0.2em]">Activated</span>
                   </div>
                 )}
                 {space.state === 'FACE_DOWN' && (
