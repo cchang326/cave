@@ -3,8 +3,8 @@ import { GameState } from '../types/game';
 import { Trophy, Coins, Home, Star, User, Loader2, History, Calendar, Zap, CheckSquare as CheckSquareIcon, Square as SquareIcon } from 'lucide-react';
 import { calculateScore } from '../utils/scoring';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
-import { collection, serverTimestamp, query, orderBy, limit, onSnapshot, where, doc, getDoc, setDoc, getDocs } from 'firebase/firestore';
-import { incrementGamesFinished, subscribeToGlobalStats, GlobalStats } from '../services/statsService';
+import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore';
+import { subscribeToGlobalStats, GlobalStats } from '../services/statsService';
 import { Users, PlayCircle } from 'lucide-react';
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
 interface GameHistoryEntry {
   id: string;
   userId: string;
+  gameId: string;
   score: number;
   timestamp: any;
   cheatsUsed: boolean;
@@ -24,11 +25,8 @@ interface GameHistoryEntry {
 
 export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose, viewOnly = false }) => {
   const { baseVP, goldVP, bonusVP, totalVP, bonusDetails } = calculateScore(gameState);
-  const [isSaving, setIsSaving] = useState(false);
-  const [hasSaved, setHasSaved] = useState(false);
   const [history, setHistory] = useState<GameHistoryEntry[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [newlySavedId, setNewlySavedId] = useState<string | null>(null);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [showCheats, setShowCheats] = useState(true);
 
@@ -44,124 +42,78 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
       return;
     }
 
-    // We want to show the top scores. 
-    // Note: This query requires a composite index on userId and score.
-    // If the index is missing, it will fall back to a simpler query in the error handler.
-    const q = query(
-      collection(db, 'game_logs'), 
-      where('userId', '==', auth.currentUser.uid),
-      orderBy('score', 'desc'),
-      limit(20)
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const entries = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as GameHistoryEntry[];
+    let currentUnsub: (() => void) | undefined;
+
+    const setupListener = () => {
+      // We want to show the top scores. 
+      // Note: This query requires a composite index on userId and score.
+      const q = query(
+        collection(db, 'game_logs'), 
+        where('userId', '==', auth.currentUser!.uid),
+        orderBy('score', 'desc'),
+        limit(20)
+      );
       
-      // Secondary sort by timestamp descending in case scores are equal
-      const sortedEntries = [...entries].sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        const timeA = a.timestamp?.toMillis?.() || 0;
-        const timeB = b.timestamp?.toMillis?.() || 0;
-        return timeB - timeA;
-      });
-      
-      setHistory(sortedEntries.slice(0, 10));
-      setIsLoadingHistory(false);
-    }, async (error) => {
-      console.error("History error:", error);
-      
-      // Fallback: If the ordered query fails (likely due to missing index),
-      // try a simpler query and sort client-side.
-      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
-        try {
+      currentUnsub = onSnapshot(q, (snapshot) => {
+        const entries = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as GameHistoryEntry[];
+        
+        const sortedEntries = [...entries].sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          const timeA = a.timestamp?.toMillis?.() || 0;
+          const timeB = b.timestamp?.toMillis?.() || 0;
+          return timeB - timeA;
+        });
+        
+        setHistory(sortedEntries.slice(0, 10));
+        setIsLoadingHistory(false);
+      }, (error) => {
+        console.error("History error:", error);
+        
+        // Fallback: If the ordered query fails (likely due to missing index),
+        // try a simpler query and sort client-side.
+        if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+          if (currentUnsub) currentUnsub();
+          
           const fallbackQ = query(
             collection(db, 'game_logs'),
             where('userId', '==', auth.currentUser!.uid),
-            limit(100)
+            limit(500)
           );
           
-          const snapshot = await getDocs(fallbackQ);
-          const entries = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as GameHistoryEntry[];
-          
-          const sortedEntries = [...entries].sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            const timeA = a.timestamp?.toMillis?.() || 0;
-            const timeB = b.timestamp?.toMillis?.() || 0;
-            return timeB - timeA;
+          currentUnsub = onSnapshot(fallbackQ, (snapshot) => {
+            const entries = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as GameHistoryEntry[];
+            
+            const sortedEntries = [...entries].sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              const timeA = a.timestamp?.toMillis?.() || 0;
+              const timeB = b.timestamp?.toMillis?.() || 0;
+              return timeB - timeA;
+            });
+            
+            setHistory(sortedEntries.slice(0, 10));
+            setIsLoadingHistory(false);
+          }, (fallbackError) => {
+            console.error("Fallback history error:", fallbackError);
+            setIsLoadingHistory(false);
           });
-          
-          setHistory(sortedEntries.slice(0, 10));
-        } catch (fallbackError) {
-          console.error("Fallback history error:", fallbackError);
-        } finally {
+        } else {
           setIsLoadingHistory(false);
         }
-      } else {
-        setIsLoadingHistory(false);
-      }
-    });
+      });
+    };
 
-    return () => unsubscribe();
+    setupListener();
+
+    return () => {
+      if (currentUnsub) currentUnsub();
+    };
   }, [auth.currentUser]);
-
-  const saveScore = async () => {
-    if (!auth.currentUser || hasSaved || isSaving || gameState.uiState.mode !== 'GAME_OVER') return;
-
-    setIsSaving(true);
-    try {
-      // Use gameId as the document ID. This ensures that:
-      // 1. We don't save duplicates for the same game session.
-      // 2. If a user replays a save slot and gets a better score, it updates the record.
-      const docId = gameState.gameId;
-      const docRef = doc(db, 'game_logs', docId);
-      
-      // Check if we already have a score for this gameId
-      const existingDoc = await getDoc(docRef);
-      if (existingDoc.exists()) {
-        const existingData = existingDoc.data();
-        // Only update if the new score is better or if it's a different game session
-        // (though gameId should be unique to the session)
-        if (existingData.score >= totalVP) {
-          setNewlySavedId(docId);
-          setHasSaved(true);
-          return;
-        }
-      }
-
-      const logData = {
-        userId: auth.currentUser.uid,
-        gameId: gameState.gameId,
-        score: totalVP,
-        gameState: JSON.parse(JSON.stringify(gameState)),
-        timestamp: serverTimestamp(),
-        cheatsUsed: gameState.cheatsUsed
-      };
-
-      await setDoc(docRef, logData, { merge: true });
-      setNewlySavedId(docId);
-      
-      // Increment global games finished count
-      await incrementGamesFinished();
-      
-      setHasSaved(true);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'game_logs');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  useEffect(() => {
-    if (auth.currentUser && !hasSaved && gameState.uiState.mode === 'GAME_OVER') {
-      saveScore();
-    }
-  }, [auth.currentUser, gameState.uiState.mode]);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Just now';
@@ -218,9 +170,11 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
             )}
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-orange-900/20 rounded-xl border border-orange-500/30 mb-8">
-            <span className="text-xl font-bold text-orange-200">Total Score</span>
-            <span className="text-4xl font-black text-orange-400">{totalVP}</span>
+          <div className="p-4 bg-orange-900/20 rounded-xl border border-orange-500/30 mb-8">
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-orange-200">Total Score</span>
+              <span className="text-4xl font-black text-orange-400">{totalVP}</span>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -281,55 +235,47 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
               ) : (
                 history
                   .filter(entry => showCheats || !entry.cheatsUsed)
-                  .map((entry, idx) => (
-                    <div 
-                      key={entry.id} 
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        entry.id === newlySavedId 
-                          ? 'bg-orange-900/40 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
-                          : 'bg-stone-900/50 border-stone-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`w-6 text-center font-bold ${
-                          idx === 0 ? 'text-yellow-400' : 
-                          idx === 1 ? 'text-stone-300' : 
-                          idx === 2 ? 'text-orange-400' : 'text-stone-500'
-                        }`}>
-                          {idx + 1}
-                        </span>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="text-stone-400 text-[10px]">
-                              {formatDate(entry.timestamp)}
-                            </span>
-                            {entry.cheatsUsed && (
-                              <Zap className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" title="Cheats used" />
-                            )}
-                          </div>
-                          <span className="text-stone-200 font-medium">
-                            Score: <span className="text-orange-400 font-bold">{entry.score}</span>
+                  .map((entry, idx) => {
+                    const isCurrentGame = entry.gameId === gameState.gameId;
+                    return (
+                      <div 
+                        key={entry.id} 
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          isCurrentGame 
+                            ? 'bg-orange-900/40 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)]' 
+                            : 'bg-stone-900/50 border-stone-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-6 text-center font-bold ${
+                            idx === 0 ? 'text-yellow-400' : 
+                            idx === 1 ? 'text-stone-300' : 
+                            idx === 2 ? 'text-orange-400' : 'text-stone-500'
+                          }`}>
+                            {idx + 1}
                           </span>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-stone-400 text-[10px]">
+                                {formatDate(entry.timestamp)}
+                              </span>
+                              {entry.cheatsUsed && (
+                                <Zap className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" title="Cheats used" />
+                              )}
+                            </div>
+                            <span className={`font-medium ${isCurrentGame ? 'text-orange-200' : 'text-stone-200'}`}>
+                              Score: <span className={`font-bold ${isCurrentGame ? 'text-orange-400' : 'text-orange-400'}`}>{entry.score}</span>
+                            </span>
+                          </div>
                         </div>
+                        {isCurrentGame && (
+                          <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider bg-orange-400/10 px-2 py-0.5 rounded">
+                            Current Game
+                          </span>
+                        )}
                       </div>
-                      {entry.id === newlySavedId && (
-                        <span className="text-[10px] font-bold text-orange-400 uppercase tracking-wider bg-orange-400/10 px-2 py-0.5 rounded">
-                          New!
-                        </span>
-                      )}
-                    </div>
-                  ))
-              )}
-              {isSaving && (
-                <div className="flex items-center justify-center gap-2 text-stone-400 text-sm py-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving your score...
-                </div>
-              )}
-              {hasSaved && (
-                <div className="text-center text-green-400 text-xs py-2">
-                  Score saved to your history!
-                </div>
+                    );
+                  })
               )}
             </div>
           )}

@@ -21,31 +21,13 @@ export function calculateScore(gameState: GameState): ScoreDetails {
 
   furnishedRooms.filter(r => r.color === 'blue').forEach(room => {
     let vp = 0;
+    // Note: Currently the blue rooms in roomTiles.ts (prospecting_site, retting_room, etc.)
+    // have passive effects during the game but no additional end-game VP bonuses described.
+    // If bonuses are added to the data, they should be implemented here.
+    
     switch (room.id) {
-      case 'treasure_chamber':
-        vp = gameState.goods.gold; // 1 VP per 1 Gold
-        break;
-      case 'food_chamber':
-        vp = Math.floor(gameState.goods.food / 3) * 2; // 2 VP per 3 Food
-        break;
-      case 'prayer_room':
-        const emptySpaces = gameState.cave.filter(s => s.state === 'EMPTY' || s.state === 'CROSSED_PICKAXES').length;
-        if (emptySpaces === 0) vp = 3; // 3 VP if no empty spaces
-        break;
-      case 'mining_cave':
-        vp = Math.floor(gameState.goods.stone / 2); // 1 VP per 2 Stone
-        break;
-      case 'gold_stash':
-        vp = Math.floor(gameState.goods.gold / 3) * 2; // 2 VP per 3 Gold
-        break;
-      case 'weapon_room':
-        vp = Math.floor(gameState.goods.wood / 2); // 1 VP per 2 Wood
-        break;
-      case 'storage_cave':
-        vp = Math.floor(gameState.goods.emmer / 3); // 1 VP per 3 Emmer
-        break;
-      case 'sleeping_parlor':
-        if (gameState.goods.food >= 5) vp = 2; // 2 VP if >= 5 Food
+      // Placeholder for future blue room bonuses if added to data
+      default:
         break;
     }
 

@@ -42,8 +42,13 @@ service cloud.firestore {
                       request.resource.data.userId == request.auth.uid &&
                       isValidGameLog(request.resource.data);
       
-      // Only admins can update or delete game logs.
-      allow update, delete: if isAdmin();
+      // Users can update or delete their own game logs (e.g., pruning top 10)
+      // but only if they remain the owner and the data is valid.
+      allow update, delete: if isOwner(resource.data.userId) && 
+                      (request.method == 'DELETE' || (
+                        request.resource.data.userId == request.auth.uid &&
+                        isValidGameLog(request.resource.data)
+                      )) || isAdmin();
     }
 
     match /users/{userId} {

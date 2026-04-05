@@ -17,6 +17,7 @@ import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { AdditionalCavernModal } from './components/AdditionalCavernModal';
 import { LoadGameModal } from './components/LoadGameModal';
 import { saveService, GameSave } from './services/saveService';
+import { scoreService } from './services/scoreService';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
 import { isValidRoomPlacement } from './utils/walls';
 
@@ -195,7 +196,7 @@ function initializeGame(): GameState {
       showScoreSummary: false
     },
     conversionHistory: [],
-    gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+    gameId: '',
     cheatsUsed: false
   };
 }
@@ -208,6 +209,16 @@ export default function App() {
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const autoExecutedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Generate gameId if it's a new game (Round 1, Turn 1) and ID is empty
+    if (gameState.actionBoard.round === 1 && gameState.actionBoard.turn === 1 && !gameState.gameId) {
+      setGameState(prev => ({
+        ...prev,
+        gameId: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      }));
+    }
+  }, [gameState.actionBoard.round, gameState.actionBoard.turn, gameState.gameId]);
 
   useEffect(() => {
     incrementVisits();
@@ -608,6 +619,10 @@ export default function App() {
         showScoreSummary: nextMode === 'GAME_OVER'
       };
 
+      if (nextMode === 'GAME_OVER') {
+        scoreService.saveHighScore(nextState);
+      }
+
       // Auto-save if logged in
       if (user) {
         setIsSaving(true);
@@ -645,6 +660,9 @@ export default function App() {
   const handleLoadSave = (slotId: string, save?: GameSave) => {
     if (save) {
       setGameState(save.state);
+      if (save.isGameOver) {
+        scoreService.saveHighScore(save.state);
+      }
     } else {
       // Empty slot selected: Always start a new game in this slot
       const newState = initializeGame();

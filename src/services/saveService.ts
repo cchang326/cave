@@ -2,6 +2,8 @@ import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, setDoc, getDocs, collection, query, orderBy, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { GameState } from '../types/game';
 
+import { calculateScore } from '../utils/scoring';
+
 export interface GameSave {
   id: string;
   state: GameState;
@@ -24,8 +26,9 @@ export const saveService = {
     const path = `users/${user.uid}/gameSaves/${slotId}`;
     try {
       const isGameOver = state.uiState.mode === 'GAME_OVER';
-      // Calculate score if game is over
-      const score = isGameOver ? calculateScore(state) : 0;
+      // Calculate score if game is over using the central utility
+      const scoreDetails = calculateScore(state);
+      const score = isGameOver ? scoreDetails.totalVP : 0;
 
       // Firestore does not support 'undefined' values. 
       // We sanitize the state by stringifying and parsing it, which removes undefined keys.
@@ -96,16 +99,3 @@ export const saveService = {
     return allSaves[0].id;
   }
 };
-
-function calculateScore(state: GameState): number {
-  let score = 0;
-  // VP from rooms
-  state.cave.forEach(space => {
-    if (space.state === 'FURNISHED' && space.tile) {
-      score += space.tile.vp;
-    }
-  });
-  // Gold
-  score += state.goods.gold;
-  return score;
-}
