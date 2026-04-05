@@ -207,8 +207,20 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
   const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'info' | 'error' | 'success' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const autoExecutedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const showNotification = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
+    setNotification({ message, type });
+  };
 
   useEffect(() => {
     // Generate gameId if it's a new game (Round 1, Turn 1) and ID is empty
@@ -360,7 +372,7 @@ export default function App() {
       // Check if they can furnish before deducting food
       if (item.actionType === 'FURNISH') {
         if (next.centralDisplay.length === 0 || !next.cave.some(s => s.state === 'EMPTY' || s.state === 'CROSSED_PICKAXES')) {
-          alert("No rooms available to furnish or no empty spaces in the cave!");
+          showNotification("No rooms available to furnish or no empty spaces in the cave!", 'error');
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
           next.uiState.checklist = checklist;
           return next;
@@ -369,7 +381,7 @@ export default function App() {
         const isUndermining = next.uiState.activeActionTile === 'undermining';
         const accessible = getAccessibleSpaces(next.cave, next.walls, isUndermining);
         if (accessible.length === 0) {
-          alert("No accessible spaces to excavate!");
+          showNotification("No accessible spaces to excavate!", 'error');
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
           next.uiState.checklist = checklist;
           return next;
@@ -377,14 +389,14 @@ export default function App() {
       } else if (item.actionType === 'ROOM_ACTION') {
         const hasRoomActions = next.cave.some(s => (s.state === 'FURNISHED' || s.state === 'ENTRANCE') && s.tile?.trigger === 'action');
         if (!hasRoomActions) {
-          alert("No rooms with actions available!");
+          showNotification("No rooms with actions available!", 'error');
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
           next.uiState.checklist = checklist;
           return next;
         }
       } else if (item.actionType === 'REMOVE_WALL') {
         if (next.walls.length === 0) {
-          alert("No walls to remove!");
+          showNotification("No walls to remove!", 'error');
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
           next.uiState.checklist = checklist;
           return next;
@@ -394,7 +406,7 @@ export default function App() {
       // Handle payBefore for any action type
       if (item.data?.payBefore) {
         if (!canAfford(next.goods, item.data.payBefore)) {
-          alert("Not enough resources to pay for this action!");
+          showNotification("Not enough resources to pay for this action!", 'error');
           return prev;
         }
         next.goods = subtractGoods(next.goods, item.data.payBefore);
@@ -403,7 +415,7 @@ export default function App() {
       // Check condition before executing
       if (item.data?.condition) {
         if (!canAfford(next.goods, undefined, item.data.condition)) {
-          alert("Condition not met for this action!");
+          showNotification("Condition not met for this action!", 'error');
           return prev;
         }
       }
@@ -429,7 +441,7 @@ export default function App() {
           return (next.goods[key as keyof typeof next.goods] || 0) >= (value as number);
         });
         if (!hasEnough) {
-          alert("Not enough resources to pay!");
+          showNotification("Not enough resources to pay!", 'error');
           return prev;
         }
         next.goods = subtractGoods(next.goods, item.data.goods);
@@ -646,15 +658,18 @@ export default function App() {
     });
   };
 
-  const handleRestartGame = () => {
-    if (window.confirm("Are you sure you want to restart the game? All current progress will be lost.")) {
-      const newState = initializeGame();
-      setGameState(newState);
-      // If logged in, we should probably save the new state to the current slot
-      if (user && currentSlotId) {
-        saveService.saveGame(currentSlotId, newState);
-      }
+  const startNewGame = () => {
+    const newState = initializeGame();
+    setGameState(newState);
+    // If logged in, we should probably save the new state to the current slot
+    if (user && currentSlotId) {
+      saveService.saveGame(currentSlotId, newState);
     }
+  };
+
+  const handleRestartGame = () => {
+    startNewGame();
+    setShowRestartConfirm(false);
   };
 
   const handleLoadSave = (slotId: string, save?: GameSave) => {
@@ -746,7 +761,7 @@ export default function App() {
           const blueRooms = prev.cave.filter(s => s.state === 'FURNISHED' && s.tile?.color === 'blue').length;
           
           if (blueRooms + 1 >= orangeRooms) {
-            alert("You must always have more orange rooms than blue rooms! You cannot build this blue room right now.");
+            showNotification("You must always have more orange rooms than blue rooms! You cannot build this blue room right now.", 'error');
             return prev;
           }
         }
@@ -759,7 +774,7 @@ export default function App() {
         });
 
         if (!hasEnough) {
-          alert(`Not enough resources to furnish ${room.name}!`);
+          showNotification(`Not enough resources to furnish ${room.name}!`, 'error');
           return prev;
         }
 
@@ -917,7 +932,7 @@ export default function App() {
         }
 
         if (nextState.uiState.activatedRoomsThisTurn.includes(spaceId)) {
-          alert("This room has already been activated this turn!");
+          showNotification("This room has already been activated this turn!", 'error');
           return prev;
         }
 
@@ -933,7 +948,7 @@ export default function App() {
             nextState.uiState.checklist.unshift(...newItems);
           }
         } else {
-          alert(`Action for ${space.tile.name} not implemented yet.`);
+          showNotification(`Action for ${space.tile.name} not implemented yet.`, 'info');
           return prev;
         }
 
@@ -967,14 +982,14 @@ export default function App() {
         if (nextState.walls.includes(wallId)) return prev;
         
         if (nextState.walls.length >= 7) {
-          alert("Maximum of 7 walls reached! You cannot build any more walls.");
+          showNotification("Maximum of 7 walls reached! You cannot build any more walls.", 'error');
           return prev;
         }
 
         nextState.walls = [...nextState.walls, wallId];
         
         if (nextState.walls.length === 7) {
-          alert("You have built your 7th and final wall!");
+          showNotification("You have built your 7th and final wall!", 'success');
         }
 
         nextState.uiState.wallsLeft -= 1;
@@ -1119,7 +1134,7 @@ export default function App() {
         {gameState.uiState.showScoreSummary && (
           <ScoreSummary 
             gameState={gameState} 
-            onPlayAgain={() => setGameState(initializeGame())} 
+            onPlayAgain={startNewGame} 
             onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, showScoreSummary: false } }))}
           />
         )}
@@ -1177,7 +1192,7 @@ export default function App() {
               </div>
             )}
             <button 
-              onClick={handleRestartGame}
+              onClick={() => setShowRestartConfirm(true)}
               className="text-sm bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded border border-stone-600 transition-colors"
             >
               Restart Game
@@ -1316,6 +1331,46 @@ export default function App() {
           onLoad={handleLoadSave}
           onClose={() => setShowLoadModal(false)}
         />
+      )}
+      {notification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`px-6 py-3 rounded-full shadow-2xl border flex items-center gap-3 ${
+            notification.type === 'error' ? 'bg-red-900/90 border-red-500 text-red-100' :
+            notification.type === 'success' ? 'bg-green-900/90 border-green-500 text-green-100' :
+            'bg-stone-800/90 border-orange-500/50 text-stone-100'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              notification.type === 'error' ? 'bg-red-500' :
+              notification.type === 'success' ? 'bg-green-500' :
+              'bg-orange-500'
+            }`} />
+            <span className="text-sm font-bold tracking-tight">{notification.message}</span>
+          </div>
+        </div>
+      )}
+      {showRestartConfirm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-stone-800 border-2 border-orange-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold text-stone-100 mb-4">Restart Game?</h3>
+            <p className="text-stone-400 mb-8">
+              Are you sure you want to restart? All current progress will be lost and your save slot will be reset.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="flex-1 py-3 bg-stone-700 hover:bg-stone-600 text-stone-200 font-bold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestartGame}
+                className="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-colors shadow-lg"
+              >
+                Restart
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
