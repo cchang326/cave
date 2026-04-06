@@ -15,8 +15,6 @@
 
 [caverna-cave-vs-cave.run.app](https://caverna-cave-vs-cave-421982027596.us-west1.run.app/)
 
-![Screenshot](./screenshots/screenshot.jpg)
-
 ## 🌟 Features
 
 - **Faithful Solo Rules**: Full implementation of the official solo ruleset.
