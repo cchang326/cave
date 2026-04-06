@@ -9,7 +9,9 @@
 > [!IMPORTANT]
 > **Disclaimer:** This is a fan-made digital implementation of the solo mode for the board game **Caverna: Cave vs Cave**. This digital version is created for fans of the game to better explore different strategies and get better at the game. If you don't already own the game but enjoy the digital version, please support the creators by purchasing a physical copy of the board game.
 
-![Game Screenshot](screenshots/screenshot.png)
+<div align="center">
+  <img src="screenshots/screenshot.png" alt="Game Screenshot" width="800" referrerPolicy="no-referrer" />
+</div>
 
 ## 🎮 Play Now
 
