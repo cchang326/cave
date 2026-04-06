@@ -1,5 +1,7 @@
 # ⚒️ Caverna: Cave vs Cave
 
+![Game Screenshot](screenshots/screenshot.png)
+
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-purple.svg)](https://vitejs.dev/)
@@ -9,11 +11,11 @@
 > [!IMPORTANT]
 > **Disclaimer:** This is a fan-made digital implementation of the solo mode for the board game **Caverna: Cave vs Cave**. This digital version is created for fans of the game to better explore different strategies and get better at the game. If you don't already own the game but enjoy the digital version, please support the creators by purchasing a physical copy of the board game.
 
-![](screenshots/screenshot.png?raw=true)
-
 ## 🎮 Play Now
 
-A version of the game is being hosted on Google Cloud for free: [caverna-cave-vs-cave.run.app](https://caverna-cave-vs-cave-421982027596.us-west1.run.app/)
+[caverna-cave-vs-cave.run.app](https://caverna-cave-vs-cave-421982027596.us-west1.run.app/)
+
+![Screenshot](./screenshots/screenshot.jpg)
 
 ## 🌟 Features
 
