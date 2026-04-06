@@ -4,11 +4,16 @@
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6-purple.svg)](https://vitejs.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-12-orange.svg)](https://firebase.google.com/)
+[![GitHub](https://img.shields.io/badge/GitHub-Repo-black.svg?logo=github)](https://github.com/cchang326/cave)
 
 > [!IMPORTANT]
 > **Disclaimer:** This is a fan-made digital implementation of the solo mode for the board game **Caverna: Cave vs Cave**. This digital version is created for fans of the game to better explore different strategies and get better at the game. If you don't already own the game but enjoy the digital version, please support the creators by purchasing a physical copy of the board game.
 
-![Game Screenshot](screenshot.png)
+![Game Screenshot](screenshots/screenshot.png)
+
+## 🎮 Play Now
+
+A version of the game is being hosted on Google Cloud for free: [caverna-cave-vs-cave.run.app](https://caverna-cave-vs-cave-421982027596.us-west1.run.app/)
 
 ## 🌟 Features
 
@@ -32,3 +37,5 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial 
 - **ShareAlike**: If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
 
 See the [LICENSE](LICENSE) file for the full text.
+
+

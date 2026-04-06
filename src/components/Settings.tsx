@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, X, Trophy } from 'lucide-react';
+import { Settings, X, Trophy, Github, ExternalLink } from 'lucide-react';
 import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
 import { ROOM_TILES } from '../data/roomTiles';
@@ -169,6 +169,19 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
             {settingsState.fixTileLocations ? 'ON' : 'OFF'}
           </button>
         </div>
+
+        <button
+          onClick={() => window.open('https://github.com/cchang326/cave/issues', '_blank')}
+          className="w-full p-2 bg-stone-900/50 hover:bg-stone-900/80 text-stone-200 rounded-lg border border-stone-700 flex items-center justify-between group transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-stone-800 rounded-md group-hover:bg-stone-700 transition-colors">
+              <Github className="w-4 h-4 text-orange-400" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider">Feedback & Bugs</span>
+          </div>
+          <ExternalLink className="w-4 h-4 text-stone-500 group-hover:text-stone-300 transition-colors mr-1" />
+        </button>
 
         <div className="space-y-2">
           <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 flex items-center gap-2 py-2 opacity-60">
