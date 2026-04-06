@@ -1,18 +1,34 @@
-<img width="1067" height="929" alt="image" src="https://github.com/user-attachments/assets/b6d32b8f-8822-4291-aeb1-ce10995ecc91" />
+# ⚒️ Caverna: Cave vs Cave
 
-## Disclaimer
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-purple.svg)](https://vitejs.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-12-orange.svg)](https://firebase.google.com/)
 
-This repo contains the source code for a digital implementation of the boardgame Caverna: Cave vs Cave. It's intended for personal entertainment, not for commercial use.
+> [!IMPORTANT]
+> **Disclaimer:** This is a fan-made digital implementation of the solo mode for the board game **Caverna: Cave vs Cave**. This digital version is created for fans of the game to better explore different strategies and get better at the game. If you don't already own the game but enjoy the digital version, please support the creators by purchasing a physical copy of the board game.
 
-A versio of the implementation is hosted on Google cloud for free. 
+![Game Screenshot](screenshot.png)
 
-If you enjoy the game, please purchase a hardcopy to support the game designer and publisher.
+## 🌟 Features
 
-## Run Locally
+- **Faithful Solo Rules**: Full implementation of the official solo ruleset.
+- **Interactive Cave Board**: Seamlessly excavate tiles and furnish your cavern with a simple click-to-play interface.
+- **Dynamic Action Board**: Round-by-round action tile reveals with a visual timeline.
+- **Smart Checklist**: An automated action checklist ensures you never miss a step in complex turns.
+- **Real-time Scoring**: Instant VP calculation as you build, with a detailed score breakdown.
+- **Cloud Saves**: Securely save and load your games across sessions using Firebase.
+- **Quality of Life**:
+  - **Fix Tile Locations**: A unique setting to keep the central display consistent for easier navigation.
+  - **Iconic Descriptions**: Toggle between text and symbolic representations of room effects.
+  - **Undo Support**: Misclicked? Use the undo button to revert your last action.
 
-**Prerequisites:**  Node.js
+## 📜 License
 
-1. Install dependencies:
-   `npm install`
-2. Run the app:
-   `npm run dev`
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
+
+- **Attribution**: You must give appropriate credit.
+- **Non-Commercial**: You may not use the material for commercial purposes.
+- **ShareAlike**: If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+
+See the [LICENSE](LICENSE) file for the full text.

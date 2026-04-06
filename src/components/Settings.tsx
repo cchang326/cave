@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Settings, X, Trophy, BookOpen, ExternalLink } from 'lucide-react';
+import { Settings, X, Trophy } from 'lucide-react';
 import { GameState, RoomTile } from '../types/game';
 import { calculateScore } from '../utils/scoring';
 import { ROOM_TILES } from '../data/roomTiles';
 
 export interface SettingsState {
-  // No state needed for now, but keeping the interface for consistency
+  fixTileLocations: boolean;
 }
 
 interface Props {
@@ -93,6 +93,13 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
     }));
   };
 
+  const handleToggleFixTileLocations = () => {
+    setSettingsState(prev => ({
+      ...prev,
+      fixTileLocations: !prev.fixTileLocations
+    }));
+  };
+
   const handleRevealAllActionTiles = () => {
     setGameState(prev => ({
       ...prev,
@@ -132,19 +139,6 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
         </button>
       </div>
       <div className="p-5 space-y-4">
-        <button
-          onClick={() => window.open('https://cdn.1j1ju.com/medias/56/be/12-caverna-cave-vs-cave-rulebook.pdf', '_blank')}
-          className="w-full p-2 bg-stone-900/50 hover:bg-stone-900/80 text-stone-200 rounded-lg border border-stone-700 flex items-center justify-between group transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-stone-800 rounded-md group-hover:bg-stone-700 transition-colors">
-              <BookOpen className="w-4 h-4 text-orange-400" />
-            </div>
-            <span className="text-xs font-bold uppercase tracking-wider">Game Rules</span>
-          </div>
-          <ExternalLink className="w-4 h-4 text-stone-500 group-hover:text-stone-300 transition-colors mr-1" />
-        </button>
-
         <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
           <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Iconic Descriptions</span>
           <button
@@ -156,6 +150,23 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
             }`}
           >
             {gameState.uiState.showIconicDescription ? 'ON' : 'OFF'}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Fix Tile Locations</span>
+            <span className="text-[9px] text-stone-500 leading-tight">Don't shift tiles when furnishing</span>
+          </div>
+          <button
+            onClick={handleToggleFixTileLocations}
+            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+              settingsState.fixTileLocations 
+                ? 'bg-green-600 text-white shadow-inner' 
+                : 'bg-stone-700 text-stone-400'
+            }`}
+          >
+            {settingsState.fixTileLocations ? 'ON' : 'OFF'}
           </button>
         </div>
 

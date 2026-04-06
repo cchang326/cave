@@ -7,7 +7,7 @@ import { StoneIcon } from './StoneIcon';
 import { isValidRoomPlacement } from '../utils/walls';
 
 interface Props {
-  tiles: RoomTile[];
+  tiles: (RoomTile | null)[];
   goods: GoodsState;
   cave: CaveSpace[];
   walls: string[];
@@ -130,7 +130,20 @@ export const CentralDisplay: React.FC<Props> = ({
         </button>
       </div>
       <div className="grid grid-cols-4 gap-3 justify-items-center">
-        {tiles.map(tile => {
+        {tiles.map((tile, index) => {
+          if (!tile) {
+            return (
+              <div 
+                key={`empty-${index}`}
+                className="w-32 h-32 rounded-lg border-2 border-dashed border-stone-700/50 flex items-center justify-center"
+              >
+                <div className="w-8 h-8 rounded-full bg-stone-700/20 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-stone-700/40" />
+                </div>
+              </div>
+            );
+          }
+
           const isSelected = selectedRoomId === tile.id;
           const furnishable = isFurnishable(tile);
           const isActuallySelectable = isSelectable && furnishable;

@@ -96,7 +96,7 @@ export interface GameState {
   cave: CaveSpace[];
   walls: string[];
   actionBoard: ActionBoardState;
-  centralDisplay: RoomTile[];
+  centralDisplay: (RoomTile | null)[];
   roomTileDeck: RoomTile[];
   uiState: UIState;
   hasAdditionalCavern: boolean;

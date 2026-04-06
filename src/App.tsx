@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GameState, CaveSpace, ActionBoardState, ChecklistItem, GoodsState } from './types/game';
+import { GameState, CaveSpace, ActionBoardState, ChecklistItem, GoodsState, RoomTile } from './types/game';
 import { ROOM_TILES_MAP, ROOM_TILES } from './data/roomTiles';
 import { setupSoloActionBoard } from './data/actionTiles';
 import { GoodsTrack } from './components/GoodsTrack';
@@ -203,7 +203,9 @@ function initializeGame(): GameState {
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(initializeGame());
-  const [settingsState, setSettingsState] = useState<SettingsState>({});
+  const [settingsState, setSettingsState] = useState<SettingsState>({
+    fixTileLocations: true
+  });
   const [user, setUser] = useState<User | null>(null);
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
   const [showLoadModal, setShowLoadModal] = useState(false);
@@ -221,6 +223,20 @@ export default function App() {
   const showNotification = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     setNotification({ message, type });
   };
+
+  useEffect(() => {
+    if (!settingsState.fixTileLocations) {
+      setGameState(prev => {
+        if (prev.centralDisplay.some(t => t === null)) {
+          return {
+            ...prev,
+            centralDisplay: prev.centralDisplay.filter((t): t is RoomTile => t !== null)
+          };
+        }
+        return prev;
+      });
+    }
+  }, [settingsState.fixTileLocations]);
 
   useEffect(() => {
     // Generate gameId if it's a new game (Round 1, Turn 1) and ID is empty
@@ -371,7 +387,7 @@ export default function App() {
 
       // Check if they can furnish before deducting food
       if (item.actionType === 'FURNISH') {
-        if (next.centralDisplay.length === 0 || !next.cave.some(s => s.state === 'EMPTY' || s.state === 'CROSSED_PICKAXES')) {
+        if (next.centralDisplay.filter(Boolean).length === 0 || !next.cave.some(s => s.state === 'EMPTY' || s.state === 'CROSSED_PICKAXES')) {
           showNotification("No rooms available to furnish or no empty spaces in the cave!", 'error');
           checklist[itemIndex] = { ...item, status: 'SKIPPED' };
           next.uiState.checklist = checklist;
@@ -751,7 +767,7 @@ export default function App() {
           };
         }
 
-        const room = prev.centralDisplay.find(r => r.id === roomId);
+        const room = prev.centralDisplay.find(r => r?.id === roomId);
         if (!room) return prev;
 
         // Rule: You must always have more orange Rooms than blue Rooms.
@@ -847,10 +863,11 @@ export default function App() {
         if (space.state !== 'EMPTY' && space.state !== 'CROSSED_PICKAXES') return prev;
         if (!prev.uiState.selectedRoomId) return prev;
 
-        const roomIndex = prev.centralDisplay.findIndex(r => r.id === prev.uiState.selectedRoomId);
+        const roomIndex = prev.centralDisplay.findIndex(r => r?.id === prev.uiState.selectedRoomId);
         if (roomIndex === -1) return prev;
 
         const roomToPlace = prev.centralDisplay[roomIndex];
+        if (!roomToPlace) return prev;
         
         // Validate wall requirements
         if (!isValidRoomPlacement(space, prev.walls, roomToPlace.wallRequirement)) {
@@ -865,7 +882,11 @@ export default function App() {
         }
 
         // Remove from display
-        nextState.centralDisplay.splice(roomIndex, 1);
+        if (settingsState.fixTileLocations) {
+          nextState.centralDisplay[roomIndex] = null;
+        } else {
+          nextState.centralDisplay.splice(roomIndex, 1);
+        }
 
         // Add to cave
         nextState.cave[spaceIndex] = { ...space, state: 'FURNISHED', tile: roomToPlace };
@@ -1123,7 +1144,7 @@ export default function App() {
   };
 
   const selectedRoomTile = gameState.uiState.selectedRoomId 
-    ? gameState.centralDisplay.find(r => r.id === gameState.uiState.selectedRoomId) 
+    ? gameState.centralDisplay.find(r => r?.id === gameState.uiState.selectedRoomId) 
     : undefined;
 
   const isGameOver = gameState.uiState.mode === 'GAME_OVER';
