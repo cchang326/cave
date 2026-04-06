@@ -1,6 +1,6 @@
-# ⚒️ Caverna: Cave vs Cave
+![Game Screenshot](screenshots/screenshot.jpg)
 
-![Game Screenshot](screenshots/screenshot.png)
+# ⚒️ Caverna: Cave vs Cave
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
@@ -14,6 +14,7 @@
 ## 🎮 Play Now
 
 [caverna-cave-vs-cave.run.app](https://caverna-cave-vs-cave-421982027596.us-west1.run.app/)
+
 
 ## 🌟 Features
 
