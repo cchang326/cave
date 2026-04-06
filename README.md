@@ -1,20 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+<img width="1067" height="929" alt="image" src="https://github.com/user-attachments/assets/b6d32b8f-8822-4291-aeb1-ce10995ecc91" />
 
-# Run and deploy your AI Studio app
+## Disclaimer
 
-This contains everything you need to run your app locally.
+This repo contains the source code for a digital implementation of the boardgame Caverna: Cave vs Cave. It's intended for personal entertainment, not for commercial use.
 
-View your app in AI Studio: https://ai.studio/apps/b4615e5f-b89e-4304-8e4d-790df6958af9
+A versio of the implementation is hosted on Google cloud for free. 
+
+If you enjoy the game, please purchase a hardcopy to support the game designer and publisher.
 
 ## Run Locally
 
 **Prerequisites:**  Node.js
 
-
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Run the app:
    `npm run dev`
