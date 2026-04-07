@@ -1211,7 +1211,7 @@ export default function App() {
         )}
         <header className="border-b border-stone-700 pb-4 flex justify-between items-end shrink-0">
           <div>
-            <h1 className="text-3xl font-bold text-orange-400 tracking-tight">Caverna: Cave vs. Cave</h1>
+            <h1 className="text-3xl font-bold text-orange-400 tracking-tight">Caverna: Cave vs Cave</h1>
             <p className="text-stone-400">Solo Implementation</p>
           </div>
           <div className="flex items-center gap-4">

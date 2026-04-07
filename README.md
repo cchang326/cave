@@ -1,4 +1,4 @@
-![Game Screenshot](screenshots/screenshot.jpg)
+![Game Screenshot](https://i.imgur.com/d81cr7p.jpeg)
 
 # ⚒️ Caverna: Cave vs Cave
 
