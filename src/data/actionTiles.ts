@@ -34,9 +34,10 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export function setupSoloActionBoard() {
+  const stage3WithoutBreach = STAGE_3_ACTIONS.filter(a => a.id !== 'breach');
   const futureActions = [
     ...shuffle(STAGE_2_ACTIONS),
-    ...shuffle(STAGE_3_ACTIONS.filter(a => a.id !== 'breach')),
+    ...shuffle(stage3WithoutBreach), // Shuffle the 3 Stage 3 actions that are NOT 'Breach'
     ...STAGE_4_ACTIONS
   ];
   return {

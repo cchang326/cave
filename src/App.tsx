@@ -159,7 +159,7 @@ function initializeGame(): GameState {
   const initialActionBoard: ActionBoardState = {
     round: 1,
     turn: 1,
-    maxTurns: firstNewAction?.stage === 2 ? 2 : firstNewAction?.stage === 3 ? 3 : 4,
+    maxTurns: 2,
     availableActions,
     futureActions,
     usedActionsThisRound: [],
@@ -613,8 +613,17 @@ export default function App() {
           const nextAction = newFuture.shift();
           if (nextAction) {
             newAvailable.push(nextAction);
-            newMaxTurns = nextAction.stage === 2 ? 2 : nextAction.stage === 3 ? 3 : 4;
           }
+          
+          // Determine max turns for the new round
+          if (newRound <= 3) {
+            newMaxTurns = 2;
+          } else if (newRound <= 6) {
+            newMaxTurns = 3;
+          } else {
+            newMaxTurns = 4;
+          }
+          
           nextUsed = [];
         } else {
           nextMode = 'GAME_OVER';
@@ -1307,6 +1316,7 @@ export default function App() {
                 <ChecklistUI 
                   checklist={gameState.uiState.checklist}
                   goods={gameState.goods}
+                  showIconicDescription={gameState.uiState.showIconicDescription}
                   onExecute={handleExecuteChecklist}
                   onSkip={handleSkipChecklist}
                   onChoose={handleChooseChecklist}

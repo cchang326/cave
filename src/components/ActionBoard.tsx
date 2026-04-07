@@ -33,24 +33,6 @@ export const ActionBoard: React.FC<Props> = ({
             </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-stone-400 text-[10px] uppercase tracking-wider hidden sm:inline">Upcoming:</span>
-          <div className="flex gap-1">
-            {board.futureActions.map((action, idx) => (
-              <div 
-                key={`${action.id}-${idx}`} 
-                className="w-8 h-10 bg-stone-900 border border-stone-700 rounded flex items-center justify-center shadow-inner"
-                title={`Stage ${action.stage} Action Tile`}
-              >
-                <span className="text-stone-500 font-bold text-xs">{action.stage}</span>
-              </div>
-            ))}
-            {board.futureActions.length === 0 && (
-              <span className="text-stone-500 text-xs italic">None</span>
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 snap-x custom-scrollbar max-w-full w-full">
@@ -91,6 +73,18 @@ export const ActionBoard: React.FC<Props> = ({
             </button>
           );
         })}
+
+        {board.futureActions.map((action, idx) => (
+          <div 
+            key={`future-${action.id}-${idx}`}
+            className="w-32 h-32 rounded-lg border-2 border-stone-700 bg-stone-800 flex-shrink-0 snap-start flex items-center justify-center relative overflow-hidden shadow-inner"
+            title={`Upcoming Stage ${action.stage} Action Tile`}
+          >
+            <span className="text-stone-700 font-black text-7xl select-none">{action.stage}</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+            <div className="absolute top-1 left-1 text-[8px] font-bold text-stone-600 uppercase tracking-tighter opacity-50">Upcoming</div>
+          </div>
+        ))}
       </div>
     </div>
   );

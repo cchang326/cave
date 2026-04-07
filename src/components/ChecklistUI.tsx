@@ -2,10 +2,13 @@ import React from 'react';
 import { ChecklistItem, GoodsState } from '../types/game';
 import { Check, X, Play, ChevronRight, Undo2, Square, CheckSquare, Circle, Info, Drumstick, TreePine, Wheat, Leaf, Coins } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
+import { ChecklistIconRenderer, getIconicChoiceLabel } from './ChecklistIconRenderer';
+import { IconicDescription } from './IconicDescription';
 
 interface Props {
   checklist: ChecklistItem[];
   goods: GoodsState;
+  showIconicDescription?: boolean;
   onExecute: (id: string) => void;
   onSkip: (id: string) => void;
   onChoose: (id: string, optionIndex: number) => void;
@@ -43,6 +46,7 @@ function canAfford(goods: GoodsState, cost?: Partial<GoodsState>, condition?: an
 export const ChecklistUI: React.FC<Props> = ({ 
   checklist, 
   goods, 
+  showIconicDescription = true,
   onExecute, 
   onSkip, 
   onChoose, 
@@ -57,7 +61,9 @@ export const ChecklistUI: React.FC<Props> = ({
   const showUndo = (canUndoAction && onUndoAction) || !!onCancel;
 
   return (
-    <div className="bg-stone-800/90 p-3.5 rounded-xl shadow-lg border border-stone-700 w-full min-w-[20rem] backdrop-blur-sm">
+    <div className={`bg-stone-800/90 p-3.5 rounded-xl shadow-lg border border-stone-700 transition-all duration-300 backdrop-blur-sm ${
+      showIconicDescription ? 'w-auto min-w-[16rem] max-w-[24rem]' : 'w-full min-w-[20rem]'
+    }`}>
       <div className="relative flex justify-center items-center mb-2">
         <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest text-center">Action Checklist</h2>
         {showUndo && (
@@ -71,7 +77,7 @@ export const ChecklistUI: React.FC<Props> = ({
         )}
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {checklist.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center text-stone-500 border border-dashed border-stone-700/50 rounded-lg bg-stone-900/20">
             <Square className="w-8 h-8 mb-2 opacity-10" />
@@ -79,29 +85,33 @@ export const ChecklistUI: React.FC<Props> = ({
           </div>
         ) : (
           checklist.map(item => (
-            <div key={item.id} className={`p-2.5 rounded-lg border ${
-              item.status === 'DONE' ? 'bg-green-900/20 border-green-800/50 text-stone-500' :
-              item.status === 'SKIPPED' ? 'bg-stone-900/50 border-stone-800 text-stone-600' :
-              item.status === 'DOING' ? 'bg-orange-900/30 border-orange-500/50 text-stone-200 ring-2 ring-orange-500/20' :
-              'bg-stone-700 border-stone-600 text-stone-200'
+            <div key={item.id} className={`py-1.5 px-2.5 rounded-lg border shadow-sm transition-all ${
+              item.status === 'DONE' ? 'bg-stone-100/90 border-stone-300 text-stone-400' :
+              item.status === 'SKIPPED' ? 'bg-stone-200/60 border-stone-300 text-stone-400' :
+              item.status === 'DOING' ? 'bg-white border-orange-500 text-stone-900 ring-2 ring-orange-500/30' :
+              'bg-stone-50 border-stone-300 text-stone-800'
             }`}>
-              <div className="flex justify-between items-start gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="mt-1 flex-shrink-0">
-                    {item.status === 'DONE' && <CheckSquare className="w-4 h-4 text-green-500" />}
-                    {item.status === 'SKIPPED' && <X className="w-4 h-4 text-stone-500" />}
-                    {item.status === 'DOING' && <Play className="w-4 h-4 text-orange-400 animate-pulse" />}
+              <div className="flex justify-between items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 flex items-center justify-center w-4">
+                    {item.status === 'DONE' && <CheckSquare className="w-4 h-4 text-green-600" />}
+                    {item.status === 'SKIPPED' && <X className="w-4 h-4 text-stone-400" />}
+                    {item.status === 'DOING' && <Play className="w-4 h-4 text-orange-600 animate-pulse" />}
                     {item.status === 'TODO' && (
                       item.actionType === 'CHOICE' 
-                        ? <Info className="w-4 h-4 text-orange-400" />
-                        : <Square className="w-4 h-4 text-stone-500" />
+                        ? <Info className="w-4 h-4 text-orange-600" />
+                        : <Square className="w-4 h-4 text-stone-400" />
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className={`font-medium text-sm leading-tight ${item.status === 'DONE' || item.status === 'SKIPPED' ? 'line-through opacity-60' : ''}`}>
-                      {item.text}
+                    <span className={`font-medium text-sm leading-tight flex items-center ${item.status === 'DONE' || item.status === 'SKIPPED' ? 'line-through decoration-stone-400 decoration-2 opacity-60' : ''}`}>
+                      {showIconicDescription ? (
+                        <ChecklistIconRenderer item={item} large={true} />
+                      ) : (
+                        item.text
+                      )}
                     </span>
-                    {item.data?.gainAfter && Object.keys(item.data.gainAfter).length > 0 && (
+                    {!showIconicDescription && item.data?.gainAfter && Object.keys(item.data.gainAfter).length > 0 && (
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[9px] text-stone-500 uppercase font-bold tracking-tighter">Bonus:</span>
                         {Object.entries(item.data.gainAfter).map(([good, amount]) => (
@@ -170,15 +180,21 @@ export const ChecklistUI: React.FC<Props> = ({
                         key={idx}
                         onClick={() => onChoose(item.id, idx)}
                         disabled={anyDoing || !affordable}
-                        className={`w-full text-left px-3 py-2 rounded-lg border text-sm flex items-center justify-between transition-all group
-                          ${(!anyDoing && affordable) ? 'bg-stone-800/50 border-stone-600 hover:bg-stone-700 hover:border-orange-500/50 text-stone-300' : 'bg-stone-900/30 border-stone-800 text-stone-600 cursor-not-allowed'}
+                        className={`w-full text-left px-3 py-2 rounded-lg border text-sm flex items-center justify-between transition-all group shadow-sm
+                          ${(!anyDoing && affordable) ? 'bg-stone-100 border-stone-300 hover:bg-white hover:border-orange-400 text-stone-800' : 'bg-stone-200/50 border-stone-300/50 text-stone-400 cursor-not-allowed'}
                         `}
                       >
-                        <div className="flex items-center gap-3">
-                          <Circle className={`w-3 h-3 flex-shrink-0 transition-colors ${(!anyDoing && affordable) ? 'text-stone-500 group-hover:text-orange-400' : 'text-stone-700'}`} />
-                          <span className="font-medium">{opt.label}</span>
+                        <div className={`flex items-center gap-3 transition-all ${(!anyDoing && affordable) ? '' : 'opacity-40 grayscale-[0.5]'}`}>
+                          <Circle className={`w-3 h-3 flex-shrink-0 transition-colors ${(!anyDoing && affordable) ? 'text-stone-400 group-hover:text-orange-500' : 'text-stone-300'}`} />
+                          <span className="font-medium">
+                            {showIconicDescription ? (
+                              <IconicDescription description={getIconicChoiceLabel(opt)} large={true} />
+                            ) : (
+                              opt.label
+                            )}
+                          </span>
                         </div>
-                        <ChevronRight className={`w-4 h-4 transition-transform ${(!anyDoing && affordable) ? 'text-stone-600 group-hover:translate-x-1 group-hover:text-orange-400' : 'text-stone-800'}`} />
+                        <ChevronRight className={`w-4 h-4 transition-transform ${(!anyDoing && affordable) ? 'text-stone-600 group-hover:translate-x-1 group-hover:text-orange-400' : 'text-stone-800 opacity-30'}`} />
                       </button>
                     );
                   })}
@@ -186,7 +202,7 @@ export const ChecklistUI: React.FC<Props> = ({
                     <button
                       onClick={() => onSkip(item.id)}
                       disabled={anyDoing}
-                      className="w-full text-center px-3 py-2 rounded border border-stone-600 bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 disabled:text-stone-500 text-stone-300 text-sm font-bold transition-colors"
+                      className="w-full text-center px-3 py-2 rounded border border-stone-300 bg-stone-100 hover:bg-white disabled:bg-stone-200/50 disabled:text-stone-400 text-stone-600 text-sm font-bold transition-colors shadow-sm"
                     >
                       Skip Choice
                     </button>

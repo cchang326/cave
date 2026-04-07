@@ -5,12 +5,18 @@ import { StoneIcon } from './StoneIcon';
 interface Props {
   description: string;
   className?: string;
+  large?: boolean;
 }
 
-export const IconicDescription: React.FC<Props> = ({ description, className = "" }) => {
+export const IconicDescription: React.FC<Props> = ({ description, className = "", large = false }) => {
   // Regex to match [token], {small text}, (medium text), or other special characters or plain text
   // We split by tokens, keeping the tokens in the result
   const tokens = description.split(/(\[.*?\]|\{.*?\}|\(.*?\)|\+|\/|\||:|\n)/g).filter(token => token !== undefined);
+
+  const iconBase = large ? "w-4 h-4" : "w-3.5 h-3.5";
+  const furnishSize = large ? "w-[20px] h-[20px]" : "w-[17.5px] h-[17.5px]";
+  const numberSize = large ? "w-[18.5px] h-[18.5px]" : "w-4 h-4";
+  const textSize = "text-[14px]";
 
   const renderToken = (token: string, index: number) => {
     if (token === '\n') return <div key={index} className="w-full h-0" />;
@@ -44,65 +50,65 @@ export const IconicDescription: React.FC<Props> = ({ description, className = ""
       case ':':
         return <span key={index} className="mx-0.5 text-stone-600 font-bold">:</span>;
       case '[wood]':
-        return <TreePine key={index} className="w-3.5 h-3.5 text-amber-900 inline-block" />;
+        return <TreePine key={index} className={`${iconBase} text-amber-900 inline-block align-middle`} />;
       case '[stone]':
-        return <StoneIcon key={index} className="w-3.5 h-3.5 text-stone-600 inline-block" />;
+        return <StoneIcon key={index} className={`${iconBase} text-stone-600 inline-block align-middle`} />;
       case '[emmer]':
-        return <Wheat key={index} className="w-3.5 h-3.5 text-yellow-800 inline-block" />;
+        return <Wheat key={index} className={`${iconBase} text-yellow-800 inline-block align-middle`} />;
       case '[flax]':
       case '[leaf]':
-        return <Leaf key={index} className="w-3.5 h-3.5 text-green-800 inline-block" />;
+        return <Leaf key={index} className={`${iconBase} text-green-800 inline-block align-middle`} />;
       case '[flax-light]':
       case '[leaf-light]':
-        return <Leaf key={index} className="w-3.5 h-3.5 text-green-600 inline-block" />;
+        return <Leaf key={index} className={`${iconBase} text-green-600 inline-block align-middle`} />;
       case '[flax-lighter]':
       case '[leaf-lighter]':
-        return <Leaf key={index} className="w-3.5 h-3.5 text-green-400 inline-block" />;
+        return <Leaf key={index} className={`${iconBase} text-green-400 inline-block align-middle`} />;
       case '[food]':
-        return <Drumstick key={index} className="w-3.5 h-3.5 text-orange-800 inline-block" />;
+        return <Drumstick key={index} className={`${iconBase} text-orange-800 inline-block align-middle`} />;
       case '[gold]':
-        return <Coins key={index} className="w-3.5 h-3.5 text-amber-600 inline-block" />;
+        return <Coins key={index} className={`${iconBase} text-amber-600 inline-block align-middle`} />;
       case '[blue-room]':
-        return <div key={index} className="w-3.5 h-3.5 bg-blue-600 rounded-sm border border-blue-700 inline-block shadow-sm" />;
+        return <div key={index} className={`${iconBase} bg-blue-600 rounded-sm border border-blue-700 inline-block shadow-sm align-middle`} />;
       case '[furnish]':
-        return <SquareArrowDown key={index} className="w-[17.5px] h-[17.5px] text-stone-700 inline-block shadow-sm" />;
+        return <SquareArrowDown key={index} className={`${furnishSize} text-stone-700 inline-block shadow-sm align-middle`} />;
       case '|':
-        return <span key={index} className="mx-1 text-stone-400 font-light">|</span>;
+        return <span key={index} className="mx-1 text-stone-400 font-light align-middle">|</span>;
       case '[arrow-right]':
-        return <ArrowRight key={index} className="w-3.5 h-3.5 text-stone-600 inline-block mx-px" />;
+        return <ArrowRight key={index} className={`${iconBase} text-stone-600 inline-block mx-px align-middle`} />;
       case '[arrow-up-to-line]':
-        return <ArrowUpToLine key={index} className="w-3.5 h-3.5 text-blue-800 inline-block mx-px" />;
+        return <ArrowUpToLine key={index} className={`${iconBase} text-blue-800 inline-block mx-px align-middle`} />;
       case '[pickaxe]':
-        return <Pickaxe key={index} className="w-3.5 h-3.5 text-stone-600 inline-block" />;
+        return <Pickaxe key={index} className={`${iconBase} text-stone-600 inline-block align-middle`} />;
       case '[space]':
-        return <span key={index} className="w-2 inline-block" />;
+        return <span key={index} className="w-2 inline-block align-middle" />;
       case '[1]':
         return (
-          <span key={index} className="inline-flex items-center justify-center w-4 h-4 rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap">
+          <span key={index} className={`inline-flex items-center justify-center ${numberSize} rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap align-middle`}>
             1
           </span>
         );
       case '[2]':
         return (
-          <span key={index} className="inline-flex items-center justify-center w-4 h-4 rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap">
+          <span key={index} className={`inline-flex items-center justify-center ${numberSize} rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap align-middle`}>
             2
           </span>
         );
       case '[3]':
         return (
-          <span key={index} className="inline-flex items-center justify-center w-4 h-4 rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap">
+          <span key={index} className={`inline-flex items-center justify-center ${numberSize} rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap align-middle`}>
             3
           </span>
         );
       case '[4]':
         return (
-          <span key={index} className="inline-flex items-center justify-center w-4 h-4 rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap">
+          <span key={index} className={`inline-flex items-center justify-center ${numberSize} rounded-sm bg-orange-500 text-white text-[10px] font-bold shadow-sm border border-orange-600 mx-px whitespace-nowrap align-middle`}>
             4
           </span>
         );
       default:
         // Handle plain text or numbers - set a default size to avoid "too big" text
-        return <span key={index} className="text-[14px] font-bold text-stone-800 whitespace-nowrap leading-none">{token}</span>;
+        return <span key={index} className={`${textSize} font-semibold text-stone-800 whitespace-nowrap leading-none align-middle`}>{token}</span>;
     }
   };
 
