@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { RoomTile, GoodsState, CaveSpace } from '../types/game';
 import { WallRequirementIcon } from './WallRequirementIcon';
 import { IconicDescription } from './IconicDescription';
-import { TreePine, Wheat, Leaf, Drumstick, Coins, Shield, CheckSquare as CheckSquareIcon, Square as SquareIcon } from 'lucide-react';
+import { TreePine, Wheat, Leaf, Drumstick, Coins, Shield, Lock, LockOpen } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
 import { isValidRoomPlacement } from '../utils/walls';
 
@@ -15,8 +15,10 @@ interface Props {
   selectedRoomId?: string;
   showIconicDescription?: boolean;
   highlightFurnishable: boolean;
+  fixTileLocations: boolean;
   onRoomClick?: (id: string) => void;
   onToggleHighlight: () => void;
+  onToggleFixTileLocations: () => void;
 }
 
 const renderCost = (cost: RoomTile['cost']): ReactNode => {
@@ -82,8 +84,10 @@ export const CentralDisplay: React.FC<Props> = ({
   selectedRoomId, 
   showIconicDescription = true,
   highlightFurnishable,
+  fixTileLocations,
   onRoomClick,
-  onToggleHighlight
+  onToggleHighlight,
+  onToggleFixTileLocations
 }) => {
   const canAfford = (tile: RoomTile): boolean => {
     return Object.entries(tile.cost).every(([good, amount]) => {
@@ -121,13 +125,31 @@ export const CentralDisplay: React.FC<Props> = ({
       <div className="flex justify-between items-center mb-4">
         <div className="w-24" /> {/* Spacer */}
         <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest text-center">Central Display</h2>
-        <button 
-          onClick={onToggleHighlight}
-          className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-stone-400 hover:text-stone-200 transition-colors"
-        >
-          {highlightFurnishable ? <CheckSquareIcon className="w-3.5 h-3.5 text-orange-500" /> : <SquareIcon className="w-3.5 h-3.5" />}
-          Highlight Furnishable
-        </button>
+        <div className="w-24 flex items-center justify-end gap-1">
+          <button 
+            onClick={onToggleFixTileLocations}
+            title="Lock tile locations"
+            className="flex items-center p-1 rounded hover:bg-stone-700/50 transition-colors group"
+          >
+            {fixTileLocations ? (
+              <Lock className="w-3.5 h-3.5 text-stone-200 group-hover:text-white" />
+            ) : (
+              <LockOpen className="w-3.5 h-3.5 text-stone-500/70 group-hover:text-stone-400" />
+            )}
+          </button>
+          <button 
+            onClick={onToggleHighlight}
+            title="Highlight furnishable rooms"
+            className="flex items-center p-1 rounded hover:bg-stone-700/50 transition-colors group"
+          >
+            <div className="grid grid-cols-2 gap-[1.5px] w-3.5 h-3.5">
+              <div className={`rounded-[1px] transition-colors ${highlightFurnishable ? 'bg-stone-200 shadow-[0_0_4px_rgba(231,229,228,0.4)]' : 'bg-stone-600 group-hover:bg-stone-500'}`} />
+              <div className={`rounded-[1px] transition-colors ${highlightFurnishable ? 'bg-stone-200/20' : 'bg-stone-600 group-hover:bg-stone-500'}`} />
+              <div className={`rounded-[1px] transition-colors ${highlightFurnishable ? 'bg-stone-200/20' : 'bg-stone-600 group-hover:bg-stone-500'}`} />
+              <div className={`rounded-[1px] transition-colors ${highlightFurnishable ? 'bg-stone-200 shadow-[0_0_4px_rgba(231,229,228,0.4)]' : 'bg-stone-600 group-hover:bg-stone-500'}`} />
+            </div>
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-4 gap-3 justify-items-center">
         {tiles.map((tile, index) => {
@@ -158,8 +180,8 @@ export const CentralDisplay: React.FC<Props> = ({
               className={`w-32 h-32 rounded-lg p-0.5 border-2 flex flex-col items-center justify-start text-center relative shadow-md transition-all
                 ${tile.color === 'orange' ? 'bg-orange-100 border-orange-400' : 'bg-blue-100 border-blue-400'}
                 ${isActuallySelectable ? 'cursor-pointer hover:scale-105' : 'cursor-default'}
-                ${shouldBlink ? 'ring-4 ring-orange-400/50 animate-pulse' : ''}
-                ${isSelected ? 'ring-8 ring-orange-500/50 border-orange-600 scale-110 z-10' : ''}
+                ${shouldBlink ? 'ring-4 ring-stone-200/40 animate-pulse' : ''}
+                ${isSelected ? 'ring-8 ring-stone-100/30 border-stone-400 scale-110 z-10' : ''}
                 ${shouldDarken ? 'opacity-40 grayscale-[0.5] brightness-50' : ''}
               `}
             >

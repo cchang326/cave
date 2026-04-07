@@ -1342,8 +1342,10 @@ export default function App() {
                 selectedRoomId={gameState.uiState.selectedRoomId}
                 showIconicDescription={gameState.uiState.showIconicDescription}
                 highlightFurnishable={gameState.uiState.highlightFurnishable}
+                fixTileLocations={settingsState.fixTileLocations}
                 onRoomClick={handleRoomClick}
                 onToggleHighlight={handleToggleHighlight}
+                onToggleFixTileLocations={() => setSettingsState(prev => ({ ...prev, fixTileLocations: !prev.fixTileLocations }))}
               />
             </div>
           </section>

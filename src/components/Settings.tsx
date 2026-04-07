@@ -140,7 +140,7 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
       </div>
       <div className="p-5 space-y-4">
         <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
-          <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Iconic Descriptions</span>
+          <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Use Iconography</span>
           <button
             onClick={handleToggleIconicDescription}
             className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
@@ -153,20 +153,16 @@ export const SettingsPanel: React.FC<Props> = ({ settingsState, setSettingsState
           </button>
         </div>
 
-        <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700">
+        <div className="flex items-center justify-between p-2 bg-stone-900/50 rounded-lg border border-stone-700 opacity-60">
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Fix Tile Locations</span>
-            <span className="text-[9px] text-stone-500 leading-tight">Don't shift tiles when furnishing</span>
+            <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">Era II Expansion</span>
+            <span className="text-[9px] text-orange-500 font-bold leading-tight">In Development</span>
           </div>
           <button
-            onClick={handleToggleFixTileLocations}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
-              settingsState.fixTileLocations 
-                ? 'bg-green-600 text-white shadow-inner' 
-                : 'bg-stone-700 text-stone-400'
-            }`}
+            disabled
+            className="px-3 py-1 rounded-md text-[10px] font-black uppercase bg-stone-800 text-stone-600 cursor-not-allowed"
           >
-            {settingsState.fixTileLocations ? 'ON' : 'OFF'}
+            OFF
           </button>
         </div>
 
