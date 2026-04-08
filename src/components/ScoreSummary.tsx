@@ -12,6 +12,7 @@ interface Props {
   onPlayAgain: () => void;
   onClose: () => void;
   viewOnly?: boolean;
+  userRole?: string | null;
 }
 
 interface GameHistoryEntry {
@@ -23,18 +24,20 @@ interface GameHistoryEntry {
   cheatsUsed: boolean;
 }
 
-export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose, viewOnly = false }) => {
+export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose, viewOnly = false, userRole }) => {
   const { baseVP, goldVP, bonusVP, totalVP, bonusDetails } = calculateScore(gameState);
   const [history, setHistory] = useState<GameHistoryEntry[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
   const [showCheats, setShowCheats] = useState(true);
 
+  const isAdmin = userRole === 'admin';
+
   useEffect(() => {
-    if (auth.currentUser?.email !== import.meta.env.VITE_ADMIN_EMAIL) return;
+    if (!isAdmin) return;
     const unsubStats = subscribeToGlobalStats(setGlobalStats);
     return () => unsubStats();
-  }, [auth.currentUser?.email]);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -280,7 +283,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
             </div>
           )}
 
-          {globalStats && auth.currentUser?.email === import.meta.env.VITE_ADMIN_EMAIL && (
+          {globalStats && isAdmin && (
             <div className="mt-8 pt-6 border-t border-stone-700">
               <div className="flex items-center gap-3 mb-4">
                 <History className="w-5 h-5 text-stone-500" />

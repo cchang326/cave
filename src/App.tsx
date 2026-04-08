@@ -208,6 +208,7 @@ export default function App() {
     fixTileLocations: true
   });
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [currentSlotId, setCurrentSlotId] = useState<string | null>(null);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
@@ -255,6 +256,8 @@ export default function App() {
       if (u) {
         // Sync user profile to Firestore so the document exists and is visible in console
         await userService.syncUserProfile(u);
+        const role = await userService.getUserRole(u.uid);
+        setUserRole(role);
 
         // Case: User just logged in
         // Check if there's an ongoing game (Round > 1 or Turn > 1 or any actions taken)
@@ -1170,6 +1173,7 @@ export default function App() {
             gameState={gameState} 
             onPlayAgain={startNewGame} 
             onClose={() => setGameState(prev => ({ ...prev, uiState: { ...prev.uiState, showScoreSummary: false } }))}
+            userRole={userRole}
           />
         )}
         {gameState.uiState.mode === 'PAY_DYNAMIC' && (

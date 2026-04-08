@@ -1,5 +1,5 @@
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
 export const userService = {
@@ -15,6 +15,20 @@ export const userService = {
       }, { merge: true });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  },
+
+  async getUserRole(uid: string): Promise<string | null> {
+    const path = `users/${uid}`;
+    try {
+      const userDoc = await getDoc(doc(db, path));
+      if (userDoc.exists()) {
+        return userDoc.data().role || null;
+      }
+      return null;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, path);
+      return null;
     }
   }
 };
