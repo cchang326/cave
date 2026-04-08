@@ -17,6 +17,7 @@ import { SelectGoodsModal } from './components/SelectGoodsModal';
 import { AdditionalCavernModal } from './components/AdditionalCavernModal';
 import { LoadGameModal } from './components/LoadGameModal';
 import { saveService, GameSave } from './services/saveService';
+import { userService } from './services/userService';
 import { scoreService } from './services/scoreService';
 import { generateChecklistForAction, getRoomActionChecklistItems } from './utils/checklist';
 import { isValidRoomPlacement } from './utils/walls';
@@ -252,6 +253,9 @@ export default function App() {
     incrementVisits();
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (u) {
+        // Sync user profile to Firestore so the document exists and is visible in console
+        await userService.syncUserProfile(u);
+
         // Case: User just logged in
         // Check if there's an ongoing game (Round > 1 or Turn > 1 or any actions taken)
         // We use a ref to get the current gameState without adding it to dependencies

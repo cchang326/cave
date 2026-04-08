@@ -31,7 +31,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
   const [showCheats, setShowCheats] = useState(true);
 
   useEffect(() => {
-    if (auth.currentUser?.email !== 'chengchang@gmail.com') return;
+    if (auth.currentUser?.email !== import.meta.env.VITE_ADMIN_EMAIL) return;
     const unsubStats = subscribeToGlobalStats(setGlobalStats);
     return () => unsubStats();
   }, [auth.currentUser?.email]);
@@ -280,7 +280,7 @@ export const ScoreSummary: React.FC<Props> = ({ gameState, onPlayAgain, onClose,
             </div>
           )}
 
-          {globalStats && auth.currentUser?.email === 'chengchang@gmail.com' && (
+          {globalStats && auth.currentUser?.email === import.meta.env.VITE_ADMIN_EMAIL && (
             <div className="mt-8 pt-6 border-t border-stone-700">
               <div className="flex items-center gap-3 mb-4">
                 <History className="w-5 h-5 text-stone-500" />
