@@ -3,6 +3,45 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - email: string (required)
+    //   - displayName: string (required)
+    //   - photoURL: string (optional)
+    //   - lastLogin: timestamp (required)
+    //   - role: string (optional, 'admin' | 'user')
+    //
+    // Collection: users/{userId}/gameSaves
+    // Document ID: {slotId}
+    // Fields:
+    //   - state: map (required)
+    //   - updatedAt: timestamp (required)
+    //   - isGameOver: bool (required)
+    //   - metadata: map (required)
+    //
+    // Collection: game_logs
+    // Document ID: {logId}
+    // Fields:
+    //   - userId: string (required)
+    //   - gameId: string (required)
+    //   - score: int (required)
+    //   - gameState: map (required)
+    //   - timestamp: timestamp (required)
+    //   - cheatsUsed: bool (required)
+    //
+    // Collection: stats
+    // Document ID: global
+    // Fields:
+    //   - visits: int (required)
+    //   - gamesFinished: int (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
     // Helper Functions
     // ===============================================================
     function isAuthenticated() {
@@ -18,62 +57,104 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'displayName', 'lastLogin']) &&
+             data.email is string && data.email.size() < 256 &&
+             data.displayName is string && data.displayName.size() < 100 &&
+             data.lastLogin is timestamp &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 2048)) &&
+             (!('role' in data) || data.role in ['admin', 'user']);
+    }
+
+    function isValidGameSave(data) {
+      return data.keys().hasAll(['state', 'updatedAt', 'isGameOver', 'metadata']) &&
+             data.state is map &&
+             data.updatedAt is timestamp &&
+             data.isGameOver is bool &&
+             data.metadata is map &&
+             data.metadata.keys().hasAll(['round', 'turn', 'score', 'gameType']) &&
+             data.metadata.round is int &&
+             data.metadata.turn is int &&
+             data.metadata.score is number &&
+             data.metadata.gameType is string;
+    }
+
     function isValidGameLog(data) {
-      return data.keys().hasAll(['userId', 'gameId', 'score', 'gameState', 'timestamp', 'cheatsUsed']) &&
+      return data.keys().hasAll(['userId', 'gameId', 'score', 'gameType', 'timestamp', 'cheatsUsed']) &&
              data.userId is string &&
              data.gameId is string &&
-             data.score is int &&
-             data.gameState is map &&
+             data.score is number &&
+             data.gameType is string &&
              data.timestamp is timestamp &&
              data.cheatsUsed is bool;
+    }
+
+    function isValidGlobalStats(data) {
+      return data.keys().hasOnly(['visits', 'gamesFinished']) &&
+             data.visits is int && data.visits >= 0 &&
+             data.gamesFinished is int && data.gamesFinished >= 0;
     }
 
     // ===============================================================
     // Rules
     // ===============================================================
 
-    match /game_logs/{logId} {
-      // Only the owner of the game log or an admin can read it.
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+    match /users/{userId} {
+      // Users can only read their own profile, unless they are admin
+      allow read: if isOwner(userId) || isAdmin();
       
-      // Only the authenticated user can create their own game logs.
+      // Users can create/update their own profile
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+      
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
+                      (request.resource.data.role == resource.data.role || isAdmin());
+
+      match /gameSaves/{slotId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update: if isOwner(userId) && isValidGameSave(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /game_logs/{logId} {
+      // Anyone can read high scores for leaderboard
+      allow read: if true;
+      
       allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid &&
                       isValidGameLog(request.resource.data);
       
-      // Users can update or delete their own game logs (e.g., pruning top 10)
-      // but only if they remain the owner and the data is valid.
-      allow update, delete: if isOwner(resource.data.userId) && 
-                      (request.method == 'DELETE' || (
-                        request.resource.data.userId == request.auth.uid &&
-                        isValidGameLog(request.resource.data)
-                      )) || isAdmin();
-    }
-
-    match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create, update: if isOwner(userId) && 
-                              (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || isAdmin());
-
-      match /gameSaves/{slotId} {
-        allow read, write: if isOwner(userId);
-      }
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid && 
+                                (request.method == 'DELETE' || (request.resource.data.userId == request.auth.uid && isValidGameLog(request.resource.data)))) || 
+                               isAdmin();
     }
 
     match /stats/{statId} {
       // Anyone can read global stats
       allow read: if true;
       
-      // Only admins can create or delete stats documents
-      allow create, delete: if isAdmin();
+      // Allow anyone to initialize the global stats doc with starting values
+      allow create: if (statId == 'global' && 
+                        request.resource.data.visits == 1 && 
+                        request.resource.data.gamesFinished == 0) || isAdmin();
+      
+      // Only admins can delete stats documents
+      allow delete: if isAdmin();
       
       // Anyone can increment the stats, but only by 1 at a time and only these specific fields
       allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visits', 'gamesFinished'])) &&
+                       isValidGlobalStats(request.resource.data) &&
                        (
                          (request.resource.data.visits == resource.data.visits + 1 && request.resource.data.gamesFinished == resource.data.gamesFinished) ||
                          (request.resource.data.gamesFinished == resource.data.gamesFinished + 1 && request.resource.data.visits == resource.data.visits) ||
                          (request.resource.data.visits == resource.data.visits + 1 && request.resource.data.gamesFinished == resource.data.gamesFinished + 1)
                        );
+    }
+    
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }
