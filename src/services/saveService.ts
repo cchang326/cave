@@ -32,7 +32,15 @@ export const saveService = {
 
       // Firestore does not support 'undefined' values. 
       // We sanitize the state by stringifying and parsing it, which removes undefined keys.
-      const sanitizedState = JSON.parse(JSON.stringify(state));
+      // We also explicitly remove undoSnapshot to keep the save size small.
+      // We do this BEFORE stringifying to avoid memory issues and ensure it's removed.
+      const { undoSnapshot, ...uiStateWithoutSnapshot } = state.uiState;
+      const stateToSave = { 
+        ...state, 
+        uiState: uiStateWithoutSnapshot 
+      };
+      
+      const sanitizedState = JSON.parse(JSON.stringify(stateToSave));
 
       await setDoc(doc(db, path), {
         state: sanitizedState,
@@ -41,7 +49,8 @@ export const saveService = {
         metadata: {
           round: state.actionBoard.round,
           turn: state.actionBoard.turn,
-          score
+          score,
+          gameType: state.uiState.gameType || 'ERA_I'
         }
       });
     } catch (error) {

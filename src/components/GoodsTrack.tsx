@@ -1,70 +1,209 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GoodsState } from '../types/game';
-import { TreePine, Wheat, Leaf, Drumstick, Coins, ArrowRightLeft, RotateCcw } from 'lucide-react';
+import { TreePine, Wheat, Leaf, Drumstick, Coins, ArrowRightLeft, RotateCcw, Volume2, VolumeX, Cuboid, Sword } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
+import { OreIcon } from './OreIcon';
+import { DonkeyIcon } from './DonkeyIcon';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../components/ui/tooltip";
+
+// Public sound effects
+const SOUNDS = {
+  gain: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Short coin blip
+  lose: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Soft thud
+};
 
 interface Props {
   goods: GoodsState;
   onExchange?: (from: keyof GoodsState, to: keyof GoodsState) => void;
   onUndoExchange?: () => void;
   canUndoExchange?: boolean;
+  era: 1 | 2;
+  suppressSounds?: boolean;
 }
 
-export const GoodsTrack: React.FC<Props> = ({ goods, onExchange, onUndoExchange, canUndoExchange }) => {
-  const goodIcons = {
-    wood: <TreePine className="w-5 h-5 text-amber-700" />,
-    stone: <StoneIcon className="w-5 h-5 text-gray-400" />,
-    emmer: <Wheat className="w-5 h-5 text-yellow-500" />,
-    flax: <Leaf className="w-5 h-5 text-green-500" />,
-    food: <Drumstick className="w-5 h-5 text-orange-500" />,
-    gold: <Coins className="w-5 h-5 text-yellow-400" />,
-  };
+interface FloatState {
+  id: number;
+  diff: number;
+}
 
-  const goodOrder: (keyof GoodsState)[] = ['wood', 'stone', 'emmer', 'flax', 'food', 'gold'];
-  const exchangeable: (keyof GoodsState)[] = ['emmer', 'flax', 'gold'];
+const GoodItem: React.FC<{
+  good: keyof GoodsState;
+  value: number;
+  icon: React.ReactNode;
+  onExchange?: (from: keyof GoodsState, to: keyof GoodsState) => void;
+  onUndoExchange?: () => void;
+  canUndoExchange?: boolean;
+  isExchangeable: boolean;
+  muted: boolean;
+  skipNextSound: boolean;
+  onSoundPlayed: () => void;
+  suppressSounds?: boolean;
+}> = ({ good, value, icon, onExchange, onUndoExchange, canUndoExchange, isExchangeable, muted, skipNextSound, onSoundPlayed, suppressSounds }) => {
+  const prevValueRef = useRef<number | null>(null);
+  const [floats, setFloats] = useState<FloatState[]>([]);
+  const idCounter = useRef(0);
+
+  useEffect(() => {
+    // If null, this is the initial mount. Set the ref and skip logic.
+    if (prevValueRef.current === null) {
+      prevValueRef.current = value;
+      return;
+    }
+
+    const prev = prevValueRef.current;
+    if (prev !== value) {
+      const diff = value - prev;
+      
+      // Floating animation still happens even if sound is suppressed
+      const id = idCounter.current++;
+      setFloats(current => [...current, { id, diff }]);
+
+      // Sound effect - logic checked here
+      if (!muted && !skipNextSound && !suppressSounds) {
+        const audio = new Audio(diff > 0 ? SOUNDS.gain : SOUNDS.lose);
+        audio.volume = 0.3;
+        audio.play().catch(() => {}); // Ignore autoplay blocks
+      }
+      
+      if (skipNextSound) {
+        onSoundPlayed();
+      }
+
+      // Cleanup float after animation (2s)
+      setTimeout(() => {
+        setFloats(current => current.filter(f => f.id !== id));
+      }, 2000);
+    }
+    prevValueRef.current = value;
+  }, [value, muted, skipNextSound, onSoundPlayed, suppressSounds]);
 
   return (
-    <div className="bg-stone-800/90 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-stone-700 w-full">
-      <div className="flex items-center gap-4 overflow-x-auto">
-        <div className="flex gap-2 flex-1">
-          {goodOrder.map((good) => (
-            <div key={good} className="flex items-center bg-stone-900/80 px-3 py-2 rounded-lg border border-stone-700 min-w-[100px] justify-between group relative">
-              <div className="flex items-center gap-2">
-                {goodIcons[good]}
-                <div className="flex flex-col">
-                  <span className="text-stone-500 text-[9px] uppercase tracking-tighter leading-none mb-0.5">{good}</span>
-                  <span className="text-white font-mono text-lg font-bold leading-none">{goods[good]}</span>
-                </div>
-              </div>
-              
-              {onExchange && exchangeable.includes(good) && (
-                <button
-                  onClick={() => onExchange(good, 'food')}
-                  disabled={goods[good] <= 0}
-                  className="ml-2 p-1.5 bg-stone-800/50 border border-stone-700 hover:bg-stone-700 disabled:opacity-30 disabled:hover:bg-transparent rounded-md transition-all text-amber-500/70 hover:text-amber-400 hover:border-amber-500/30 shadow-sm"
-                  title={`Exchange 1 ${good} for 1 food`}
-                >
-                  <ArrowRightLeft className="w-3.5 h-3.5" />
-                </button>
-              )}
+    <div className="flex items-center bg-stone-900/80 px-1.5 py-0.5 rounded-md border border-stone-700/50 w-full justify-between group relative h-8">
+      <TooltipProvider delay={200}>
+        <Tooltip>
+          <TooltipTrigger>
+            <div className="flex items-center gap-2 cursor-help">
+              <div className="flex-shrink-0">{icon}</div>
+              <motion.span 
+                key={value}
+                initial={{ scale: 1.2, color: '#fb923c' }}
+                animate={{ scale: 1, color: '#ffffff' }}
+                transition={{ duration: 0.8 }}
+                className="text-white font-mono text-[20px] font-bold leading-none block"
+              >
+                {value}
+              </motion.span>
             </div>
-          ))}
-        </div>
-        {onUndoExchange && (
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-stone-900 border-stone-700 text-stone-200 text-xs capitalize">
+            {good}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Floating Indicators */}
+      <AnimatePresence>
+        {floats.map(f => (
+          <motion.div
+            key={f.id}
+            initial={{ y: 0, opacity: 0, scale: 0.8 }}
+            animate={{ y: -12, opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            className={`absolute left-10 pointer-events-none font-black text-[10px] drop-shadow-md ${f.diff > 0 ? 'text-green-400' : 'text-red-400'}`}
+            style={{ zIndex: 50 }}
+          >
+            {f.diff > 0 ? `+${f.diff}` : f.diff}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      
+      <div className="flex items-center gap-1 z-10">
+        {good === 'food' && onUndoExchange && canUndoExchange && (
           <button
             onClick={onUndoExchange}
-            disabled={!canUndoExchange}
             title="Undo last conversion"
-            className={`flex items-center justify-center p-2 rounded-lg border transition-all shadow-md flex-shrink-0
-              ${canUndoExchange 
-                ? 'bg-orange-600/20 border-orange-500 text-orange-400 hover:bg-orange-600/30 active:bg-orange-600/40' 
-                : 'bg-stone-800 border-stone-700 text-stone-600 opacity-50 cursor-not-allowed'}
-            `}
+            className="p-0.5 bg-orange-600/20 border border-orange-500/50 hover:bg-orange-600/40 text-orange-400 rounded transition-all shadow-sm"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3 h-3" />
+          </button>
+        )}
+
+        {onExchange && isExchangeable && (
+          <button
+            onClick={() => onExchange(good, 'food')}
+            disabled={value <= 0}
+            className="p-0.5 bg-stone-800/50 border border-stone-700 hover:bg-stone-700 disabled:opacity-30 disabled:hover:bg-transparent rounded transition-all text-amber-500/70 hover:text-amber-400 hover:border-amber-500/30 shadow-sm"
+            title={`Exchange 1 ${good} for 1 food`}
+          >
+            <ArrowRightLeft className="w-3 h-3" />
           </button>
         )}
       </div>
     </div>
   );
 };
+
+export const GoodsTrack: React.FC<Props & { muted: boolean }> = ({ goods, onExchange, onUndoExchange, canUndoExchange, era, muted, suppressSounds }) => {
+  const [skipSoundFor, setSkipSoundFor] = useState<string | null>(null);
+  const iconSize = "w-[18px] h-[18px]";
+
+  const handleExchange = (from: keyof GoodsState, to: keyof GoodsState) => {
+    if (onExchange) {
+      setSkipSoundFor(from);
+      onExchange(from, to);
+      setTimeout(() => setSkipSoundFor(null), 500);
+    }
+  };
+  
+  const goodIcons: Record<keyof GoodsState, React.ReactNode> = {
+    wood: <TreePine className={`${iconSize} text-amber-700`} />,
+    stone: <StoneIcon className={`${iconSize} text-gray-400`} />,
+    emmer: <Wheat className={`${iconSize} text-yellow-500`} />,
+    flax: <Leaf className={`${iconSize} text-green-500`} />,
+    food: <Drumstick className={`${iconSize} text-orange-500`} />,
+    gold: <Coins className={`${iconSize} text-yellow-400`} />,
+    donkey: <DonkeyIcon className={`${iconSize} text-orange-700`} />,
+    ore: <OreIcon className={`${iconSize} text-zinc-500`} />,
+    iron: <Cuboid className={`${iconSize} text-blue-300`} />,
+    weapons: <Sword className={`${iconSize} text-red-400`} />,
+  };
+
+  const goodOrder: (keyof GoodsState)[] = era === 1 
+    ? ['wood', 'stone', 'emmer', 'flax', 'food', 'gold']
+    : ['wood', 'stone', 'emmer', 'flax', 'food', 'gold', 'donkey', 'ore', 'iron', 'weapons'];
+
+  const exchangeable: (keyof GoodsState)[] = era === 1 
+    ? ['emmer', 'flax', 'gold']
+    : ['emmer', 'flax', 'gold', 'donkey'];
+
+  return (
+    <TooltipProvider delay={200}>
+      <div className="bg-stone-800/95 backdrop-blur-sm p-1.5 rounded-lg shadow-xl border border-stone-700 w-24 flex flex-col gap-0.5 relative z-[300]">
+        {goodOrder.map(good => (
+          <GoodItem 
+            key={good}
+            good={good}
+            value={goods[good]}
+            icon={goodIcons[good]}
+            onExchange={handleExchange}
+            onUndoExchange={onUndoExchange}
+            canUndoExchange={canUndoExchange}
+            isExchangeable={exchangeable.includes(good)}
+            muted={muted}
+            skipNextSound={skipSoundFor === good || (skipSoundFor !== null && good === 'food')}
+            onSoundPlayed={() => setSkipSoundFor(null)}
+            suppressSounds={suppressSounds}
+          />
+        ))}
+      </div>
+    </TooltipProvider>
+  );
+};
+

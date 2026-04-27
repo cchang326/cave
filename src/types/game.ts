@@ -1,4 +1,4 @@
-export type Good = 'wood' | 'stone' | 'emmer' | 'flax' | 'food' | 'gold';
+export type Good = 'wood' | 'stone' | 'emmer' | 'flax' | 'food' | 'gold' | 'donkey' | 'ore' | 'iron' | 'weapons';
 export type EffectTrigger = 'immediate' | 'action' | 'passive' | 'end_game' | 'anytime' | 'none';
 
 export interface GoodsState {
@@ -8,6 +8,10 @@ export interface GoodsState {
   flax: number;
   food: number;
   gold: number;
+  donkey: number;
+  ore: number;
+  iron: number;
+  weapons: number;
 }
 
 export interface WallRequirement {
@@ -27,6 +31,8 @@ export interface RoomTile {
   effectDescription: string;
   iconicDescription?: string;
   effectPayload?: any;
+  era: 1 | 2;
+  excavatable: boolean;
 }
 
 export type SpaceState = 'EMPTY' | 'FACE_DOWN' | 'FURNISHED' | 'ENTRANCE' | 'CROSSED_PICKAXES';
@@ -46,6 +52,9 @@ export interface ActionTile {
   stage: 0 | 2 | 3 | 4;
   description: string;
   iconicDescription?: string;
+  era: 1 | 2;
+  additionalActionDescription?: string;
+  additionalActionIconic?: string;
 }
 
 export interface ActionBoardState {
@@ -58,7 +67,7 @@ export interface ActionBoardState {
   totalRounds: number;
 }
 
-export type ChecklistActionType = 'EXCAVATE' | 'FURNISH' | 'ROOM_ACTION' | 'GAIN' | 'PAY' | 'CHOICE' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC';
+export type ChecklistActionType = 'EXCAVATE' | 'FURNISH' | 'ROOM_ACTION' | 'GAIN' | 'PAY' | 'CHOICE' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC' | 'GAIN_CALCULATED' | 'QUANTITY';
 
 export interface ChecklistItem {
   id: string;
@@ -68,10 +77,21 @@ export interface ChecklistItem {
   optional: boolean;
   exclusiveGroup?: string;
   data?: any;
+  source?: {
+    type: 'passive';
+    name: string;
+  };
+  passiveGains?: {
+    goods: Partial<GoodsState>;
+    name: string;
+  }[];
 }
 
+export type GameType = 'ERA_I' | 'ERA_II' | 'ERA_II_DRAFT';
+
 export interface UIState {
-  mode: 'IDLE' | 'EXCAVATE' | 'FURNISH_SELECT_ROOM' | 'FURNISH_SELECT_SPACE' | 'ROOM_ACTION' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC' | 'RESOLVING_TURN' | 'GAME_OVER' | 'LEADERBOARD';
+  mode: 'IDLE' | 'EXCAVATE' | 'FURNISH_SELECT_ROOM' | 'FURNISH_SELECT_SPACE' | 'ROOM_ACTION' | 'BUILD_WALL' | 'REMOVE_WALL' | 'PAY_DYNAMIC' | 'RESOLVING_TURN' | 'GAME_OVER' | 'LEADERBOARD' | 'DRAFTING' | 'DRAFTING_PLACE_ROOM' | 'DRAFTING_COMPLETE';
+  gameType: GameType;
   excavationsLeft: number;
   furnishingsLeft: number;
   roomActionsLeft: number;
@@ -89,6 +109,8 @@ export interface UIState {
   showIconicDescription: boolean;
   highlightFurnishable: boolean;
   showScoreSummary: boolean;
+  draftingWallsLeft: number;
+  draftingScore: number;
 }
 
 export interface GameState {
@@ -97,10 +119,15 @@ export interface GameState {
   walls: string[];
   actionBoard: ActionBoardState;
   centralDisplay: (RoomTile | null)[];
-  roomTileDeck: RoomTile[];
+  fdp1: RoomTile[];
+  fdp2: RoomTile[];
   uiState: UIState;
   hasAdditionalCavern: boolean;
   conversionHistory: (keyof GoodsState)[];
   gameId: string;
   cheatsUsed: boolean;
+  era: 1 | 2;
+  era1Score: number;
+  era1RoomVP: number;
+  era1GoldVP: number;
 }

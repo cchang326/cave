@@ -1,21 +1,24 @@
 import React from 'react';
 import { ChecklistItem, GoodsState } from '../types/game';
-import { Check, X, Play, ChevronRight, Undo2, Square, CheckSquare, Circle, Info, Drumstick, TreePine, Wheat, Leaf, Coins } from 'lucide-react';
+import { Check, X, Play, ChevronRight, Undo2, Square, CheckSquare, Circle, Info, Drumstick, TreePine, Wheat, Leaf, Coins, GripVertical, ListChecks, Minus, Plus } from 'lucide-react';
 import { StoneIcon } from './StoneIcon';
 import { ChecklistIconRenderer, getIconicChoiceLabel } from './ChecklistIconRenderer';
 import { IconicDescription } from './IconicDescription';
+import { motion } from 'motion/react';
 
 interface Props {
   checklist: ChecklistItem[];
   goods: GoodsState;
   showIconicDescription?: boolean;
-  onExecute: (id: string) => void;
+  isCollapsed: boolean;
+  onExecute: (id: string, isManual?: boolean, amount?: number) => void;
   onSkip: (id: string) => void;
   onChoose: (id: string, optionIndex: number) => void;
   onFinishTurn: () => void;
   onUndoAction?: () => void;
   canUndoAction?: boolean;
   onCancel?: () => void;
+  onToggle?: () => void;
 }
 
 const goodIcons: Record<string, React.ReactNode> = {
@@ -47,37 +50,64 @@ export const ChecklistUI: React.FC<Props> = ({
   checklist, 
   goods, 
   showIconicDescription = true,
+  isCollapsed,
   onExecute, 
   onSkip, 
   onChoose, 
   onFinishTurn, 
   onUndoAction, 
   canUndoAction,
-  onCancel
+  onCancel,
+  onToggle
 }) => {
+  const [quantities, setQuantities] = React.useState<Record<string, number>>({});
+
+  if (isCollapsed) return null;
+
   const allDoneOrSkipped = checklist.every(item => item.status === 'DONE' || item.status === 'SKIPPED');
   const anyDoing = checklist.some(item => item.status === 'DOING');
 
   const showUndo = (canUndoAction && onUndoAction) || !!onCancel;
 
   return (
-    <div className={`bg-stone-800/90 p-3.5 rounded-xl shadow-lg border border-stone-700 transition-all duration-300 backdrop-blur-sm ${
-      showIconicDescription ? 'w-auto min-w-[16rem] max-w-[24rem]' : 'w-full min-w-[20rem]'
-    }`}>
-      <div className="relative flex justify-center items-center mb-2">
-        <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest text-center">Action Checklist</h2>
-        {showUndo && (
-          <button
-            onClick={onCancel || onUndoAction}
-            title={onCancel ? "Cancel/Back" : "Undo Action"}
-            className="absolute right-0 bg-red-900/50 hover:bg-red-800/80 text-red-200 p-1.5 rounded transition-colors"
-          >
-            <Undo2 className="w-4 h-4" />
-          </button>
-        )}
+    <div 
+      className={`absolute top-2 left-2 z-[200] bg-stone-900 py-4 rounded-xl shadow-2xl border border-stone-600 flex flex-col transition-all duration-300 ${
+        showIconicDescription ? 'w-80' : 'w-[26rem]'
+      }`}
+    >
+      <div className="px-4 mb-4">
+        <div className="relative flex justify-center items-center group">
+          {onToggle && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              title="Hide Action Checklist"
+              className="absolute left-0 bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white p-1.5 rounded-md transition-all shadow-lg active:scale-95 cursor-pointer z-[210]"
+            >
+              <ListChecks className="w-4 h-4" />
+            </button>
+          )}
+          <h2 className="text-stone-300 text-[10px] font-bold uppercase tracking-widest text-center px-8">Action Checklist</h2>
+          {showUndo && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onCancel) onCancel();
+                else if (onUndoAction) onUndoAction();
+              }}
+              title={onCancel ? "Cancel/Back" : "Undo Action"}
+              className="absolute right-0 bg-red-900/60 hover:bg-red-700 text-white p-1.5 rounded-md transition-all shadow-lg active:scale-95 cursor-pointer z-[210]"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
       
-      <div className="space-y-1.5">
+      <div className="px-4 flex-1 overflow-hidden">
+        <div className="space-y-1.5 overflow-y-auto custom-scrollbar max-h-[70vh] pr-1 -mr-1">
         {checklist.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center text-stone-500 border border-dashed border-stone-700/50 rounded-lg bg-stone-900/20">
             <Square className="w-8 h-8 mb-2 opacity-10" />
@@ -85,32 +115,58 @@ export const ChecklistUI: React.FC<Props> = ({
           </div>
         ) : (
           checklist.map(item => (
-            <div key={item.id} className={`py-1.5 px-2.5 rounded-lg border shadow-sm transition-all ${
-              item.status === 'DONE' ? 'bg-stone-100/90 border-stone-300 text-stone-400' :
-              item.status === 'SKIPPED' ? 'bg-stone-200/60 border-stone-300 text-stone-400' :
+            <div key={item.id} className={`py-1.5 px-2.5 rounded-lg border shadow-sm transition-all relative overflow-hidden ${
+              item.status === 'DONE' ? 'bg-stone-200/90 border-stone-400 text-stone-600' :
+              item.status === 'SKIPPED' ? 'bg-stone-300/60 border-stone-400 text-stone-500' :
               item.status === 'DOING' ? 'bg-white border-orange-500 text-stone-900 ring-2 ring-orange-500/30' :
               'bg-stone-50 border-stone-300 text-stone-800'
             }`}>
-              <div className="flex justify-between items-center gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex-shrink-0 flex items-center justify-center w-4">
+              {(item.status === 'DONE' || item.status === 'SKIPPED') && (
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '100%' }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="absolute top-1/2 left-0 h-[1.5px] bg-stone-600/40 -translate-y-1/2 pointer-events-none z-10"
+                />
+              )}
+              <div className="flex justify-between items-start gap-4 relative">
+                <div className="flex items-start gap-3 flex-1 min-w-0 pt-0.5">
+                  <div className="flex-shrink-0 flex items-center justify-center w-4 mt-1">
                     {item.status === 'DONE' && <CheckSquare className="w-4 h-4 text-green-600" />}
                     {item.status === 'SKIPPED' && <X className="w-4 h-4 text-stone-400" />}
-                    {item.status === 'DOING' && <Play className="w-4 h-4 text-orange-600 animate-pulse" />}
+                    {item.status === 'DOING' && <Play className="w-4 h-4 text-orange-600 animate-game-pulse" />}
                     {item.status === 'TODO' && (
                       item.actionType === 'CHOICE' 
                         ? <Info className="w-4 h-4 text-orange-600" />
                         : <Square className="w-4 h-4 text-stone-400" />
                     )}
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className={`font-medium text-sm leading-tight flex items-center ${item.status === 'DONE' || item.status === 'SKIPPED' ? 'line-through decoration-stone-400 decoration-2 opacity-60' : ''}`}>
+                  <div className="flex flex-col min-w-0 relative">
+                    <div className="font-medium text-sm leading-tight flex items-center transition-all">
                       {showIconicDescription ? (
-                        <ChecklistIconRenderer item={item} large={true} />
+                        item.source?.type === 'passive' ? (
+                          <div 
+                            title={`${item.source.name} effect`}
+                            className="bg-blue-100/80 border border-blue-300 px-2 py-1 rounded shadow-sm flex items-center gap-2"
+                          >
+                             <ChecklistIconRenderer item={item} large={true} amount={quantities[item.id]} />
+                          </div>
+                        ) : (
+                          <ChecklistIconRenderer item={item} large={true} amount={quantities[item.id]} />
+                        )
                       ) : (
-                        item.text
+                        item.source?.type === 'passive' ? (
+                          <span 
+                            title={`${item.source.name} effect`}
+                            className="bg-blue-100/50 border-b border-blue-300 px-1"
+                          >
+                            {item.text}
+                          </span>
+                        ) : (
+                          item.text
+                        )
                       )}
-                    </span>
+                    </div>
                     {!showIconicDescription && item.data?.gainAfter && Object.keys(item.data.gainAfter).length > 0 && (
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[9px] text-stone-500 uppercase font-bold tracking-tighter">Bonus:</span>
@@ -125,7 +181,7 @@ export const ChecklistUI: React.FC<Props> = ({
                   </div>
                 </div>
                 
-                {item.status === 'TODO' && item.actionType !== 'CHOICE' && (
+                {item.status === 'TODO' && item.actionType !== 'CHOICE' && item.actionType !== 'QUANTITY' && (
                   <div className="flex gap-2">
                     <button 
                       onClick={() => onExecute(item.id)}
@@ -151,9 +207,71 @@ export const ChecklistUI: React.FC<Props> = ({
                   </div>
                 )}
 
+                {item.status === 'TODO' && item.actionType === 'QUANTITY' && (
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-2 bg-stone-200 rounded-md p-1 border border-stone-300">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const current = quantities[item.id] ?? 1;
+                          if (current > 0) {
+                            setQuantities(prev => ({ ...prev, [item.id]: current - 1 }));
+                          }
+                        }}
+                        className="p-1 hover:bg-white rounded transition-colors text-stone-600 active:scale-90"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-6 text-center text-sm font-bold text-stone-900 leading-none">
+                        {quantities[item.id] ?? 1}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const current = quantities[item.id] ?? 1;
+                          
+                          // Calculate max based on resource
+                          let max = 99;
+                          if (item.data.costPer) {
+                            for (const [res, cost] of Object.entries(item.data.costPer)) {
+                              const available = goods[res as keyof GoodsState] || 0;
+                              max = Math.min(max, Math.floor(available / (cost as number)));
+                            }
+                          }
+
+                          if (current < max) {
+                            setQuantities(prev => ({ ...prev, [item.id]: current + 1 }));
+                          }
+                        }}
+                        className="p-1 hover:bg-white rounded transition-colors text-stone-600 active:scale-90"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button 
+                        onClick={() => onExecute(item.id, true, quantities[item.id] ?? 1)}
+                        disabled={anyDoing}
+                        className="px-3 py-1 bg-orange-600 hover:bg-orange-500 disabled:bg-stone-600 disabled:text-stone-400 text-white text-[10px] font-bold rounded transition-colors uppercase"
+                      >
+                        Confirm
+                      </button>
+                      {item.optional && (
+                        <button 
+                          onClick={() => onSkip(item.id)}
+                          disabled={anyDoing}
+                          className="px-2 py-1 bg-stone-600 hover:bg-stone-500 disabled:bg-stone-700 disabled:text-stone-500 text-white text-[10px] font-bold rounded transition-colors uppercase"
+                        >
+                          Skip
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {item.status === 'DOING' && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-orange-400 animate-pulse">In Progress...</span>
+                    <span className="text-xs font-bold text-orange-400 animate-game-pulse">In Progress...</span>
                     {item.optional && (
                       <button 
                         onClick={() => onSkip(item.id)}
@@ -213,14 +331,17 @@ export const ChecklistUI: React.FC<Props> = ({
           ))
         )}
       </div>
+    </div>
 
       {allDoneOrSkipped && checklist.length > 0 && (
-        <button
-          onClick={onFinishTurn}
-          className="mt-4 w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-[1.02]"
-        >
-          Finish Turn
-        </button>
+        <div className="px-4 mt-4">
+          <button
+            onClick={onFinishTurn}
+            className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-[1.02]"
+          >
+            Finish Turn
+          </button>
+        </div>
       )}
     </div>
   );
