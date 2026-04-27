@@ -374,7 +374,7 @@ export default function App() {
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'info' | 'error' | 'success' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSuppressingSounds, setIsSuppressingSounds] = useState(false);
+  const [isSuppressingFeedback, setIsSuppressingFeedback] = useState(false);
   const [isChecklistCollapsed, setIsChecklistCollapsed] = useState(true);
   const autoExecutedRef = useRef<Set<string>>(new Set());
   const prevChecklistLengthRef = useRef(0);
@@ -450,6 +450,7 @@ export default function App() {
           await saveService.saveGame(openSlot, currentState);
         } else {
           // Page load login: Auto-load most recent unfinished game
+          setIsSuppressingFeedback(true);
           const recentSave = await saveService.getMostRecentUnfinishedSave();
           if (recentSave) {
             setGameState(recentSave.state);
@@ -459,6 +460,7 @@ export default function App() {
             const openSlot = await saveService.findOpenSlot();
             setCurrentSlotId(openSlot);
           }
+          setTimeout(() => setIsSuppressingFeedback(false), 500);
         }
       } else {
         // User logged out
@@ -953,15 +955,18 @@ export default function App() {
   }, [gameState.actionBoard.round, gameState.actionBoard.turn, gameState.uiState.mode, user, currentSlotId]);
 
   const startNewGame = () => {
+    setIsSuppressingFeedback(true);
     const newState = initializeGame();
     setGameState(newState);
     // If logged in, we should probably save the new state to the current slot
     if (user && currentSlotId) {
       saveService.saveGame(currentSlotId, newState);
     }
+    setTimeout(() => setIsSuppressingFeedback(false), 500);
   };
 
   const startDrafting = () => {
+    setIsSuppressingFeedback(true);
     // 1. Set all resources to 0
     const zeroGoods: GoodsState = {
       wood: 0, stone: 0, emmer: 0, flax: 0, food: 0, gold: 0, donkey: 0, ore: 0, iron: 0, weapons: 0
@@ -1032,10 +1037,11 @@ export default function App() {
       era1RoomVP: 0,
       era1GoldVP: 0
     }));
+    setTimeout(() => setIsSuppressingFeedback(false), 500);
   };
 
   const transitionToEraII = () => {
-    setIsSuppressingSounds(true);
+    setIsSuppressingFeedback(true);
     setGameState(prev => {
       let currentFdp1 = [...prev.fdp1];
       
@@ -1177,7 +1183,7 @@ export default function App() {
         goods: eraIIGoods,
       };
     });
-    setTimeout(() => setIsSuppressingSounds(false), 300);
+    setTimeout(() => setIsSuppressingFeedback(false), 300);
   };
 
   const handleRestartGame = () => {
@@ -1186,7 +1192,7 @@ export default function App() {
   };
 
   const handleLoadSave = (slotId: string, save?: GameSave) => {
-    setIsSuppressingSounds(true);
+    setIsSuppressingFeedback(true);
     if (save) {
       const loadedState = { ...save.state };
       // Migration for old saves missing gameType
@@ -1213,7 +1219,7 @@ export default function App() {
     }
     setCurrentSlotId(slotId);
     setShowLoadModal(false);
-    setTimeout(() => setIsSuppressingSounds(false), 300);
+    setTimeout(() => setIsSuppressingFeedback(false), 500); // Increased a bit to be safe
   };
 
   const checkCompletion = (nextState: GameState) => {
@@ -2008,7 +2014,7 @@ export default function App() {
                   canUndoExchange={gameState.conversionHistory.length > 0}
                   era={gameState.era}
                   muted={settingsState.isMuted}
-                  suppressSounds={isSuppressingSounds}
+                  suppressFeedback={isSuppressingFeedback}
                 />
               </CaveBoard>
             </div>

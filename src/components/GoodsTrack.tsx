@@ -24,7 +24,7 @@ interface Props {
   onUndoExchange?: () => void;
   canUndoExchange?: boolean;
   era: 1 | 2;
-  suppressSounds?: boolean;
+  suppressFeedback?: boolean;
 }
 
 interface FloatState {
@@ -43,8 +43,8 @@ const GoodItem: React.FC<{
   muted: boolean;
   skipNextSound: boolean;
   onSoundPlayed: () => void;
-  suppressSounds?: boolean;
-}> = ({ good, value, icon, onExchange, onUndoExchange, canUndoExchange, isExchangeable, muted, skipNextSound, onSoundPlayed, suppressSounds }) => {
+  suppressFeedback?: boolean;
+}> = ({ good, value, icon, onExchange, onUndoExchange, canUndoExchange, isExchangeable, muted, skipNextSound, onSoundPlayed, suppressFeedback }) => {
   const prevValueRef = useRef<number | null>(null);
   const [floats, setFloats] = useState<FloatState[]>([]);
   const idCounter = useRef(0);
@@ -60,15 +60,16 @@ const GoodItem: React.FC<{
     if (prev !== value) {
       const diff = value - prev;
       
-      // Floating animation still happens even if sound is suppressed
-      const id = idCounter.current++;
-      setFloats(current => [...current, { id, diff }]);
+      // Floating animation and sound only if not suppressed
+      if (!suppressFeedback) {
+        const id = idCounter.current++;
+        setFloats(current => [...current, { id, diff }]);
 
-      // Sound effect - logic checked here
-      if (!muted && !skipNextSound && !suppressSounds) {
-        const audio = new Audio(diff > 0 ? SOUNDS.gain : SOUNDS.lose);
-        audio.volume = 0.3;
-        audio.play().catch(() => {}); // Ignore autoplay blocks
+        if (!muted && !skipNextSound) {
+          const audio = new Audio(diff > 0 ? SOUNDS.gain : SOUNDS.lose);
+          audio.volume = 0.3;
+          audio.play().catch(() => {}); // Ignore autoplay blocks
+        }
       }
       
       if (skipNextSound) {
@@ -76,12 +77,15 @@ const GoodItem: React.FC<{
       }
 
       // Cleanup float after animation (2s)
-      setTimeout(() => {
-        setFloats(current => current.filter(f => f.id !== id));
-      }, 2000);
+      if (!suppressFeedback) {
+        const id = idCounter.current - 1; // Last added ID
+        setTimeout(() => {
+          setFloats(current => current.filter(f => f.id !== id));
+        }, 2000);
+      }
     }
     prevValueRef.current = value;
-  }, [value, muted, skipNextSound, onSoundPlayed, suppressSounds]);
+  }, [value, muted, skipNextSound, onSoundPlayed, suppressFeedback]);
 
   return (
     <div className="flex items-center bg-stone-900/80 px-1.5 py-0.5 rounded-md border border-stone-700/50 w-full justify-between group relative h-8">
@@ -92,9 +96,9 @@ const GoodItem: React.FC<{
               <div className="flex-shrink-0">{icon}</div>
               <motion.span 
                 key={value}
-                initial={{ scale: 1.2, color: '#fb923c' }}
+                initial={suppressFeedback ? false : { scale: 1.2, color: '#fb923c' }}
                 animate={{ scale: 1, color: '#ffffff' }}
-                transition={{ duration: 0.8 }}
+                transition={suppressFeedback ? { duration: 0 } : { duration: 0.8 }}
                 className="text-white font-mono text-[20px] font-bold leading-none block"
               >
                 {value}
@@ -150,7 +154,7 @@ const GoodItem: React.FC<{
   );
 };
 
-export const GoodsTrack: React.FC<Props & { muted: boolean }> = ({ goods, onExchange, onUndoExchange, canUndoExchange, era, muted, suppressSounds }) => {
+export const GoodsTrack: React.FC<Props & { muted: boolean }> = ({ goods, onExchange, onUndoExchange, canUndoExchange, era, muted, suppressFeedback }) => {
   const [skipSoundFor, setSkipSoundFor] = useState<string | null>(null);
   const iconSize = "w-[18px] h-[18px]";
 
@@ -199,7 +203,7 @@ export const GoodsTrack: React.FC<Props & { muted: boolean }> = ({ goods, onExch
             muted={muted}
             skipNextSound={skipSoundFor === good || (skipSoundFor !== null && good === 'food')}
             onSoundPlayed={() => setSkipSoundFor(null)}
-            suppressSounds={suppressSounds}
+            suppressFeedback={suppressFeedback}
           />
         ))}
       </div>
