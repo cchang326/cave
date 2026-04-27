@@ -1,5 +1,6 @@
 {
-  "name": "Cave2",
+  "name": "Caverna: Cave vs Cave",
   "description": "A digital implementation of the solo board game Caverna: Cave vs Cave with Era II expansion",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }
